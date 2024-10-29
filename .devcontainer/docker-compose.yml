@@ -1,0 +1,15 @@
+services:
+  ngx-parody-api-dev:
+    image: ngx-parody-api-dev
+    container_name: ngx-parody-api-dev
+    build:
+      context: ../.
+      dockerfile: ./.devcontainer/Dockerfile
+    privileged: true
+    working_dir: /ngx-parody-api
+    ports:
+      - "4204:4204"
+    volumes:
+      - ..:/ngx-parody-api:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    tty: true

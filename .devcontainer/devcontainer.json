@@ -1,0 +1,25 @@
+{
+  "name": "Parody Api Dev",
+  "dockerComposeFile": [
+    "docker-compose.yml"
+  ],
+  "service": "ngx-parody-api-dev",
+	"workspaceFolder": "/ngx-parody-api",
+	"customizations": {
+		"vscode": {
+			"extensions": [
+        "Angular.ng-template",
+        "ms-vscode.vscode-typescript-next",
+        "dbaeumer.vscode-eslint",
+        "eamodio.gitlens",
+        "naumovs.color-highlight",
+        "manishsencha.readme-preview",
+        "wix.vscode-import-cost",
+        "natewallace.angular2-inline",
+        "johnpapa.angular-essentials",
+        "ms-azuretools.vscode-docker",
+        "NathanInbar.vs-ghoul"
+      ]
+		}
+	}
+}
