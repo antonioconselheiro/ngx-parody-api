@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-
 import { NgxParodyApiComponent } from './ngx-parody-api.component';
 
 describe('NgxParodyApiComponent', () => {

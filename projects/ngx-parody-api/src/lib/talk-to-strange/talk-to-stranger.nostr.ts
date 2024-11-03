@@ -5,6 +5,9 @@ import { NostrEventFactory } from '@shared/nostr/nostr-event.factory';
 import { kinds, nip04, NostrEvent } from 'nostr-tools';
 import { finalize, Observable, Subject } from 'rxjs';
 
+/**
+ * Talk to strange service omegle feature for nostr
+ */
 @Injectable()
 export class TalkToStrangerNostr {
 

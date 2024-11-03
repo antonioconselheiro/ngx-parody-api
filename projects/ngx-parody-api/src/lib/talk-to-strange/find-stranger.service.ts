@@ -9,6 +9,9 @@ import { catchError, Subscription, throwError, timeout } from 'rxjs';
 import { FindStrangerNostr } from './find-stranger.nostr';
 import { NpoolOpts } from '@domain/npool-opts.interface';
 
+/**
+ * Find strange service omegle feature for nostr
+ */
 @Injectable()
 export class FindStrangerService {
 

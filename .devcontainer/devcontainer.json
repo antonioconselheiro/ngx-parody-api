@@ -5,6 +5,7 @@
   ],
   "service": "ngx-parody-api-dev",
 	"workspaceFolder": "/ngx-parody-api",
+  "postCreateCommand": "./.devcontainer/auth.sh",
 	"customizations": {
 		"vscode": {
 			"extensions": [
