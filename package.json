@@ -5,7 +5,7 @@
   "license": "Ungovernable",
   "scripts": {
     "start": "ng serve",
-    "build": "ng build --project ngx-parody-api --configuration production",
+    "build": "./build.sh",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --no-watch --browsers=ChromeHeadlessCI",
     "test:ci": "ng test --no-watch --no-progress --browsers=ChromeHeadlessCI"

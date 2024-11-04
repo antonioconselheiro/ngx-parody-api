@@ -185,6 +185,7 @@ export class FindStrangerService {
   async createSession(): Promise<NostrPublicUser> {
     const session = await this.talkToStrangeSigner.recreateSession();
     this.talkToStrangeSession.saveInList(session.pubkey);
+    console.info(new Date().toLocaleString(), 'me: ', session.pubkey);
     return session;
   }
 

@@ -25,12 +25,6 @@ RUN chmod +x /usr/bin/nak
 # workdir
 WORKDIR /ngx-parody-api
 
-# credentials
-COPY ./.gitconfig /root/.gitconfig
-COPY ./.ssh /root/.ssh
-RUN chmod 600 -R /root/.ssh
-RUN ssh-add -D && ssh-add /root/.ssh/id_ed25519 || true
-
 # teclado português com horário brasileiro
 ENV LANG=C.UTF-8
 ENV LANGUAGE=C.UTF-8

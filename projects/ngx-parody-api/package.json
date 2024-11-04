@@ -1,11 +1,12 @@
 {
-  "name": "ngx-parody-api",
+  "name": "@belomonte/ngx-parody-api",
   "version": "1.0.0",
   "author": "António Conselheiro",
   "license": "Ungovernable",
   "peerDependencies": {
     "@angular/common": "^18.2.0",
-    "@angular/core": "^18.2.0"
+    "@angular/core": "^18.2.0",
+    "@nostrify/nostrify": "npm:@jsr/nostrify__nostrify@^0.36.1"
   },
   "dependencies": {
     "tslib": "^2.3.0"
