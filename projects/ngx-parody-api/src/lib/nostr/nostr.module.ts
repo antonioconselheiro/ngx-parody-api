@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { NostrEventFactory } from './nostr-event.factory';
+import { NostrConverter } from './nostr.converter';
 import { NostrPool } from './nostr.pool';
 
 @NgModule({
@@ -8,7 +8,7 @@ import { NostrPool } from './nostr.pool';
     CommonModule
   ],
   providers: [
-    NostrEventFactory,
+    NostrConverter,
     NostrPool
   ]
 })

@@ -1,13 +1,14 @@
-import { catchError, Subscription, throwError, timeout } from "rxjs";
-import { OmeglestrUser } from "../domain/omeglestr-user";
-import { TalkToStrangeSession } from "./talk-to-strange.session";
-import { NostrPool } from "../nostr/nostr.pool";
-import { NostrEventFactory } from "../nostr/nostr-event.factory";
-import { FindStrangerNostr } from "./find-stranger.nostr";
-import { NostrEvent } from "@nostrify/nostrify";
-import { TalkToStrangeConfig } from "./talk-to-strange.config";
 import { Injectable } from "@angular/core";
-import { NpoolOpts } from "../domain/npool-opts.interface";
+import { NostrEvent } from "@nostrify/nostrify";
+import { catchError, Subscription, throwError, timeout } from "rxjs";
+import { NostrEventFactory } from "./nostr-event.factory";
+import { NostrPool } from "../nostr/nostr.pool";
+import { FindStrangerNostr } from "./find-stranger.nostr";
+import { TalkToStrangeConfig } from "./talk-to-strange.config";
+import { TalkToStrangeSession } from "./talk-to-strange.session";
+import { TalkToStrangeSigner } from "./talk-to-strange.signer";
+import { NostrPublicUser } from "../domain/nostr-public-user.interface";
+import { NostrConverter } from "../nostr/nostr.converter";
 
 /**
  * Find strange service omegle feature for nostr
@@ -21,6 +22,8 @@ export class FindStrangerService {
     private nostrEventFactory: NostrEventFactory,
     private findStrangerNostr: FindStrangerNostr,
     private talkToStrangeSession: TalkToStrangeSession,
+    private talkToStrangeSigner: TalkToStrangeSigner,
+    private nostrConverter: NostrConverter,
     private config: TalkToStrangeConfig,
     private npool: NostrPool
   ) { }
@@ -29,34 +32,35 @@ export class FindStrangerService {
     return this.npool.event(event);
   }
 
-  async searchStranger(me: Required<OmeglestrUser>, opts: NpoolOpts): Promise<OmeglestrUser> {
+  async searchStranger(opts: { signal?: AbortSignal }): Promise<NostrPublicUser> {
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
     const includePow = true;
     if (wannaChat) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
-      const listening = this.listenChatingConfirmation(wannaChat, me, opts);
-      await this.inviteToChating(me, wannaChat, includePow);
+      const listening = this.listenChatingConfirmation(wannaChat, opts);
+      await this.inviteToChating(wannaChat, includePow);
       const isChatingConfirmation = await listening;
       this.talkToStrangeSession.saveInList(wannaChat.pubkey);
 
       if (isChatingConfirmation) {
-        return Promise.resolve(OmeglestrUser.fromPubkey(wannaChat.pubkey));
+        return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
       } else {
-        await this.endSession(me);
-        return this.searchStranger(me, opts);
+        await this.endSession();
+        return this.searchStranger(opts);
       }
     }
 
-    await this.publishWannaChatStatus(me, includePow);
+    const currentUser = await this.talkToStrangeSigner.getPublicUser();
+    await this.publishWannaChatStatus(includePow);
     return new Promise(resolve => {
       const sub = this.findStrangerNostr
-        .listenWannachatResponse(me, opts)
+        .listenWannachatResponse(currentUser, opts)
         .pipe(
           timeout(this.config.wannachatStatusDefaultTimeoutInSeconds * 1000),
           catchError(err => {
             sub.unsubscribe();
-            this.deleteUserHistory(me).then(
-              () => this.searchStranger(me, opts).then(stranger => resolve(stranger))
+            this.deleteUserHistory().then(
+              () => this.searchStranger(opts).then(stranger => resolve(stranger))
             );
 
             return throwError(() => new err)
@@ -65,7 +69,7 @@ export class FindStrangerService {
         .subscribe({
           next: event => {
             this.talkToStrangeSession.saveInList(event.pubkey);
-            this.replyChatInvitation(event, me)
+            this.replyChatInvitation(event)
               .then(user => {
                 if (!user) {
                   throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
@@ -85,17 +89,17 @@ export class FindStrangerService {
     });
   }
 
-  async replyChatInvitation(event: NostrEvent, me: Required<OmeglestrUser>): Promise<OmeglestrUser | void> {
+  async replyChatInvitation(event: NostrEvent): Promise<NostrPublicUser | void> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'event was listen: ', event);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
-    await this.inviteToChating(me, event);
+    await this.inviteToChating(event);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'replied... resolving... ');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[searchStranger] unsubscribe');
-    return Promise.resolve(OmeglestrUser.fromPubkey(event.pubkey));
+    return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
   }
 
-  private isChatingToMe(event: NostrEvent, me: Required<OmeglestrUser>): boolean {
+  private isChatingToMe(event: NostrEvent): boolean {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is wannachat reply with chating? event: ', event);
 
     const result = event.tags
@@ -106,12 +110,12 @@ export class FindStrangerService {
     return !!result.length;
   }
 
-  private inviteToChating(me: Required<OmeglestrUser>, strangeStatus: NostrEvent, includePow = false): Promise<NostrEvent> {
-    const stranger = OmeglestrUser.fromPubkey(strangeStatus.pubkey);
-    return this.publishChatInviteStatus(me, stranger, includePow);
+  private inviteToChating(strangeStatus: NostrEvent, includePow = false): Promise<NostrEvent> {
+    const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangeStatus.pubkey);
+    return this.publishChatInviteStatus(stranger, includePow);
   }
 
-  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, me: Required<OmeglestrUser>, opts: NpoolOpts): Promise<boolean> {
+  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: { signal?: AbortSignal }): Promise<boolean> {
     return new Promise<boolean>(resolve => {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'listening status update from: ', strangerWannachatEvent.pubkey);
       // FIXME: ensure that the error will make the unsubscription trigger the abort signal sending, to clean filters in relay
@@ -119,10 +123,10 @@ export class FindStrangerService {
         .listenUserStatusUpdate(strangerWannachatEvent.pubkey, opts)
         .pipe(
           timeout(5000),
-          catchError(err => throwError(() => new Error('chat confirmation timeout after 5s waiting, there is no stranger connected to this session')))
+          catchError(err => throwError(() => new Error('chat confirmation timeout after 5s waiting, there is no stranger connected to this session', { cause: err })))
         )
         .subscribe({
-          next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent, me).then(is => {
+          next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent).then(is => {
             if (typeof is === 'boolean') {
               resolve(is);
             }
@@ -135,7 +139,7 @@ export class FindStrangerService {
     });
   }
 
-  private receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent, me: Required<OmeglestrUser>): Promise<boolean | undefined> {
+  private receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent): Promise<boolean | undefined> {
     if (status.id === strangerWannachatEvent.id && status.content === 'wannachat') {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');
       return Promise.resolve(undefined);
@@ -154,38 +158,38 @@ export class FindStrangerService {
     }
   }
 
-  private async publishWannaChatStatus(user: Required<OmeglestrUser>, includePow = false): Promise<NostrEvent> {
-    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(user, includePow);
+  private async publishWannaChatStatus(includePow = false): Promise<NostrEvent> {
+    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(includePow);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', wannaChatStatus);
     await this.npool.event(wannaChatStatus);
 
     return Promise.resolve(wannaChatStatus);
   }
 
-  private async publishChatInviteStatus(user: Required<OmeglestrUser>, stranger: OmeglestrUser, includePow = false): Promise<NostrEvent> {
-    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(user, stranger, includePow);
+  private async publishChatInviteStatus(stranger: NostrPublicUser, includePow = false): Promise<NostrEvent> {
+    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, includePow);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', chatingStatus);
     await this.npool.event(chatingStatus);
 
     return Promise.resolve(chatingStatus);
   }
 
-  private async deleteUserHistory(user: Required<OmeglestrUser>): Promise<void> {
-    const deleteStatus = this.nostrEventFactory.deleteUserHistory(user);
+  private async deleteUserHistory(): Promise<void> {
+    const deleteStatus = await this.nostrEventFactory.deleteUserHistory();
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'deleting user history');
     await this.npool.event(deleteStatus);
   }
 
-  createSession(): Required<OmeglestrUser> {
-    const session = OmeglestrUser.create();
+  async createSession(): Promise<NostrPublicUser> {
+    const session = await this.talkToStrangeSigner.recreateSession();
     this.talkToStrangeSession.saveInList(session.pubkey);
     return session;
   }
 
-  async endSession(user: Required<OmeglestrUser>): Promise<NostrEvent> {
-    const disconnectStatus = await this.nostrEventFactory.createDisconnectedUserStatus(user);
+  async endSession(): Promise<NostrEvent> {
+    const disconnectStatus = await this.nostrEventFactory.createDisconnectedUserStatus();
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', disconnectStatus);
-    await this.deleteUserHistory(user);
+    await this.deleteUserHistory();
     await this.npool.event(disconnectStatus);
 
     return Promise.resolve(disconnectStatus);

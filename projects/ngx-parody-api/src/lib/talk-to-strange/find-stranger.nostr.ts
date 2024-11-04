@@ -1,21 +1,20 @@
 import { Injectable } from '@angular/core';
+import { NostrEvent } from '@nostrify/nostrify';
 import { kinds } from 'nostr-tools';
 import { Observable } from 'rxjs';
-import { NostrPool } from '../nostr/nostr.pool';
+import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { TalkToStrangeSession } from './talk-to-strange.session';
-import { NpoolOpts } from '../domain/npool-opts.interface';
-import { NostrEvent } from '@nostrify/nostrify';
-import { OmeglestrUser } from '../domain/omeglestr-user';
+import { NostrPool } from '../nostr/nostr.pool';
 
 @Injectable()
 export class FindStrangerNostr {
 
   constructor(
     private npool: NostrPool,
-    private ignoreListService: TalkToStrangeSession
+    private talkToStrangeSession: TalkToStrangeSession
   ) { }
 
-  listenUserStatusUpdate(pubkey: string, opts: NpoolOpts): Observable<NostrEvent> {
+  listenUserStatusUpdate(pubkey: string, opts: { signal?: AbortSignal }): Observable<NostrEvent> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'observing filter:', [
       {
         kinds: [ kinds.UserStatuses ],
@@ -30,7 +29,7 @@ export class FindStrangerNostr {
     ], opts);
   }
 
-  queryWannachatResponse(user: Required<OmeglestrUser>, opts: NpoolOpts): Promise<NostrEvent[]> {
+  queryWannachatResponse(user: NostrPublicUser, opts: { signal?: AbortSignal }): Promise<NostrEvent[]> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','quering filter:', [
       {
         kinds: [ kinds.UserStatuses ],
@@ -49,7 +48,7 @@ export class FindStrangerNostr {
     ], opts);
   }
 
-  listenWannachatResponse(user: Required<OmeglestrUser>, opts: NpoolOpts): Observable<NostrEvent> {
+  listenWannachatResponse(user: NostrPublicUser, opts: { signal?: AbortSignal }): Observable<NostrEvent> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','observing filter:', [
       {
         kinds: [ kinds.UserStatuses ],
@@ -68,7 +67,7 @@ export class FindStrangerNostr {
     ], opts);
   }
 
-  async queryChatAvailable(opts: NpoolOpts): Promise<NostrEvent | null> {
+  async queryChatAvailable(opts: { signal?: AbortSignal }): Promise<NostrEvent | null> {
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1_000);
     const timeInSeconds = (60 * 10);
 
@@ -87,7 +86,7 @@ export class FindStrangerNostr {
       }
     ], opts);
 
-    wannachats = wannachats.filter(wannachat => !this.ignoreListService.isInList(wannachat.pubkey));
+    wannachats = wannachats.filter(wannachat => !this.talkToStrangeSession.isInList(wannachat.pubkey));
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {

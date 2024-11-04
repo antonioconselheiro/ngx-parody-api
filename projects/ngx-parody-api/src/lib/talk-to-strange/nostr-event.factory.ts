@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { NostrEvent } from '@nostrify/nostrify';
-import { EventTemplate, finalizeEvent, kinds, nip04 } from 'nostr-tools';
-import { OmeglestrUser } from '../domain/omeglestr-user';
-import { TalkToStrangeConfig } from '../talk-to-strange/talk-to-strange.config';
+import { EventTemplate, kinds, nip04 } from 'nostr-tools';
+import { NostrPublicUser } from '../domain/nostr-public-user.interface';
+import { TalkToStrangeConfig } from './talk-to-strange.config';
+import { TalkToStrangeSigner } from './talk-to-strange.signer';
 
 @Injectable({
   providedIn: 'root'
@@ -12,10 +13,11 @@ export class NostrEventFactory {
   readonly largeExpirationTime = 30 * 60;
 
   constructor(
-    private readonly globalConfigService: TalkToStrangeConfig
+    private talkToStrangeConfig: TalkToStrangeConfig,
+    private talkToStrangeSigner: TalkToStrangeSigner
   ) { }
 
-  private getCurrentTimestamp(): number {
+  private unixTimeNow(): number {
     const oneMillisecond = 1000;
     return Math.floor(Date.now() / oneMillisecond);
   }
@@ -25,7 +27,7 @@ export class NostrEventFactory {
    * @returns expiration timestamp
    */
   private getExpirationTimestamp(
-    expireIn = this.globalConfigService.wannachatStatusDefaultTimeoutInSeconds
+    expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds
   ): string {
     const oneMillisecond = 1000;
     const expirationTimestamp = Math.floor(Date.now() / oneMillisecond) + expireIn;
@@ -37,55 +39,51 @@ export class NostrEventFactory {
    * https://github.com/nostr-protocol/nips/blob/master/04.md
    * https://github.com/nbd-wtf/nostr-tools/blob/master/nip04.test.ts
    */
-  async createEncryptedDirectMessage(you: Required<OmeglestrUser>, stranger: OmeglestrUser, message: string): Promise<NostrEvent> {
+  async createEncryptedDirectMessage(stranger: NostrPublicUser, message: string): Promise<NostrEvent> {
     const encriptedMessage = await nip04.encrypt(you.secretKey, stranger.pubkey, message);
 
     const unsignedEvent: EventTemplate = {
       kind: kinds.EncryptedDirectMessage,
       content: encriptedMessage,
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      created_at: this.getCurrentTimestamp(),
+      created_at: this.unixTimeNow(),
       tags: [
         [ 'p', stranger.pubkey],
         [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
       ]
     };
 
-    const verifiedEvent = finalizeEvent(
-      unsignedEvent, you.secretKey
-    );
-
-    return Promise.resolve(verifiedEvent);
+    return this.talkToStrangeSigner.signEvent(unsignedEvent);
   }
 
   /**
    * NIP 38
    * https://github.com/nostr-protocol/nips/blob/master/38.md
    */
-  createWannaChatUserStatus(user: Required<OmeglestrUser>, includePow = false): Promise<NostrEvent> {
-    const expireIn = this.globalConfigService.wannachatStatusDefaultTimeoutInSeconds + 5;
-    return this.createUserStatus(user, 'wannachat', [
+  createWannaChatUserStatus(includePow = false): Promise<NostrEvent> {
+    const expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
+    return this.createUserStatus('wannachat', [
         [ 'expiration', this.getExpirationTimestamp(expireIn) ],
         [ 't', 'omegle' ],
         [ 't', 'wannachat' ]
       ], includePow);
   }
 
-  createDisconnectedUserStatus(user: Required<OmeglestrUser>): Promise<NostrEvent> {
-    return this.createUserStatus(user, 'disconnected', [
+  createDisconnectedUserStatus(): Promise<NostrEvent> {
+    return this.createUserStatus('disconnected', [
       [ 'expiration', this.getExpirationTimestamp() ]
     ]);
   }
 
-  createTypingUserStatus(user: Required<OmeglestrUser>): Promise<NostrEvent> {
-    return this.createUserStatus(user, 'typing', [
+  createTypingUserStatus(): Promise<NostrEvent> {
+    return this.createUserStatus('typing', [
       [ 't', 'omegle' ],
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
     ]);
   }
 
-  createChatingUserStatus(you: Required<OmeglestrUser>, strange: OmeglestrUser, includePow = false): Promise<NostrEvent> {
-    return this.createUserStatus(you, 'chating', [
+  createChatingUserStatus(strange: NostrPublicUser, includePow = false): Promise<NostrEvent> {
+    return this.createUserStatus('chating', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
       [ 'p', strange.pubkey ],
       [ 't', 'omegle' ],
@@ -93,7 +91,7 @@ export class NostrEventFactory {
     ], includePow);
   }
 
-  deleteUserHistory(you: Required<OmeglestrUser>): NostrEvent {
+  deleteUserHistory(): Promise<NostrEvent> {
     const template: EventTemplate = {
       kind: kinds.EventDeletion,
       tags: [
@@ -105,21 +103,17 @@ export class NostrEventFactory {
       content: ''
     }
 
-    const verifiedEvent = finalizeEvent(
-      template, you.secretKey
-    );
-
-    return verifiedEvent;
+    return this.talkToStrangeSigner.signEvent(template);
   }
 
-  cleanUserStatus(user: Required<OmeglestrUser>): Promise<NostrEvent> {
-    return this.createUserStatus(user, '', [
+  cleanUserStatus(): Promise<NostrEvent> {
+    return this.createUserStatus('', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
       [ 't', 'omegle' ]
     ]);
   }
 
-  private async createUserStatus(user: Required<OmeglestrUser>, status: string, customTags?: string[][], includePow = false): Promise<NostrEvent> {
+  private async createUserStatus(status: string, customTags?: string[][], includePow = false): Promise<NostrEvent> {
     const tags = [
       ['d', 'general'],
       ...(customTags || [])
@@ -129,25 +123,24 @@ export class NostrEventFactory {
       kind: kinds.UserStatuses,
       content: status,
       // eslint-disable-next-line @typescript-eslint/naming-convention
-      created_at: this.getCurrentTimestamp(),
+      created_at: this.unixTimeNow(),
       tags
     };
 
     if (includePow) {
+      const pubkey = await this.talkToStrangeSigner.getPublicKey()
       const { data: eventSigner } = await new Promise<{ data: EventTemplate }>(resolve => {
         const worker = new Worker(new URL('../../workers/nostr-event-pow.worker', import.meta.url));
         worker.onmessage = ({ data }) => {
           resolve(data)
           worker.terminate();
         };
-        worker.postMessage({ ...eventTemplate, pubkey: user.pubkey });
+        worker.postMessage({ ...eventTemplate, pubkey });
       });
 
       eventTemplate = eventSigner;
     }
 
-    return finalizeEvent(
-      eventTemplate, user.secretKey
-    );
+    return this.talkToStrangeSigner.signEvent(eventTemplate);
   }
 }

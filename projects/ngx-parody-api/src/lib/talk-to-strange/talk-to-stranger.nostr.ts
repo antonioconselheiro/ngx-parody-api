@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { kinds, nip04, NostrEvent } from 'nostr-tools';
 import { finalize, Observable, Subject } from 'rxjs';
-import { NostrEventFactory } from '../nostr/nostr-event.factory';
+import { NostrEventFactory } from './nostr-event.factory';
 import { NostrPool } from '../nostr/nostr.pool';
 import { OmeglestrUser } from '../domain/omeglestr-user';
 
