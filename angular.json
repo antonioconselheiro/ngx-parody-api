@@ -16,7 +16,7 @@
           },
           "configurations": {
             "production": {
-              "tsConfig": "projects/ngx-parody-api/tsconfig.lib.prod.json"
+              "tsConfig": "projects/ngx-parody-api/tsconfig.lib.json"
             },
             "development": {
               "tsConfig": "projects/ngx-parody-api/tsconfig.lib.json"
@@ -31,7 +31,9 @@
             "polyfills": [
               "zone.js",
               "zone.js/testing"
-            ]
+            ],
+            "browsers": "ChromeHeadlessCI",
+            "karmaConfig": "karma.conf.js"
           }
         }
       }

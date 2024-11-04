@@ -6,7 +6,7 @@ export * from './lib/talk-to-strange/omegle-service.module';
 export * from './lib/talk-to-strange/find-stranger.nostr';
 export * from './lib/talk-to-strange/find-stranger.service';
 export * from './lib/talk-to-strange/talk-to-strange.config';
-export * from './lib/talk-to-strange/test.service.spec';
+export * from './lib/talk-to-strange/test-service.spec';
 export * from './lib/talk-to-strange/talk-to-stranger.nostr';
 export * from './lib/talk-to-strange/nostr-event.factory';
 export * from './lib/talk-to-strange/talk-to-strange.signer';

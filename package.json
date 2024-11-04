@@ -1,11 +1,14 @@
 {
   "name": "belomonte",
   "version": "1.0.0",
+  "author": "António Conselheiro",
+  "license": "Ungovernable",
   "scripts": {
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --project ngx-parody-api --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test --no-watch --browsers=ChromeHeadlessCI",
+    "test:ci": "ng test --no-watch --no-progress --browsers=ChromeHeadlessCI"
   },
   "dependencies": {
     "@angular/animations": "^18.2.0",

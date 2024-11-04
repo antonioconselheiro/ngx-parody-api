@@ -3,9 +3,12 @@ FROM node:20
 RUN npm install typescript @angular/cli sass sassdoc -g
 RUN yes | npx jsr
 
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
+  
 # Including jq to filter json
 RUN apt update
-RUN apt install -y jq
+RUN apt install -y jq gnupg google-chrome-stable
 RUN apt clean
 RUN rm -rf /var/lib/apt/lists/*
 
