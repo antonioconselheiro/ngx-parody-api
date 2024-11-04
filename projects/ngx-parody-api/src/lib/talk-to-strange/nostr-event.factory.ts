@@ -40,7 +40,7 @@ export class NostrEventFactory {
    * https://github.com/nbd-wtf/nostr-tools/blob/master/nip04.test.ts
    */
   async createEncryptedDirectMessage(stranger: NostrPublicUser, message: string): Promise<NostrEvent> {
-    const encriptedMessage = await nip04.encrypt(you.secretKey, stranger.pubkey, message);
+    const encriptedMessage = await this.talkToStrangeSigner.nip04.encrypt(stranger.pubkey, message);
 
     const unsignedEvent: EventTemplate = {
       kind: kinds.EncryptedDirectMessage,

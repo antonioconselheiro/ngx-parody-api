@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { kinds, nip04, NostrEvent } from 'nostr-tools';
+import { kinds, NostrEvent } from 'nostr-tools';
 import { finalize, Observable, Subject } from 'rxjs';
-import { NostrEventFactory } from './nostr-event.factory';
+import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
-import { OmeglestrUser } from '../domain/omeglestr-user';
+import { NostrEventFactory } from './nostr-event.factory';
+import { TalkToStrangeSigner } from './talk-to-strange.signer';
 
 /**
  * Talk to strange service omegle feature for nostr
@@ -15,24 +16,36 @@ export class TalkToStrangerNostr {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
+    private talkToStrangeSigner: TalkToStrangeSigner,
     private npool: NostrPool
   ) { }
 
-  async openEncryptedDirectMessage(you: Required<OmeglestrUser>, stranger: OmeglestrUser, event: NostrEvent): Promise<string> {
-    return nip04.decrypt(you.secretKey, stranger.pubkey, event.content);
+  async openEncryptedDirectMessage(stranger: NostrPublicUser, event: NostrEvent): Promise<string> {
+    return this.talkToStrangeSigner.nip04.decrypt(stranger.pubkey, event.content);
   }
 
-  listenMessages(me: Required<OmeglestrUser>, stranger: OmeglestrUser): Observable<NostrEvent> {
-    return this.npool.observe([
-      {
-        kinds: [ kinds.EncryptedDirectMessage ],
-        authors: [ stranger.pubkey ],
-        '#p': [ me.pubkey ]
-      }
-    ]);
+  listenMessages(stranger: NostrPublicUser): Observable<NostrEvent> {
+    const subject = new Subject<NostrEvent>();
+    this.talkToStrangeSigner
+      .getPublicKey()
+      .then(pubkey => {
+        this.npool.observe([
+          {
+            kinds: [ kinds.EncryptedDirectMessage ],
+            authors: [ stranger.pubkey ],
+            '#p': [ pubkey ]
+          }
+        ]).subscribe({
+          next: event => subject.next(event),
+          error: error => subject.error(error),
+          complete: () => subject.complete(),
+        });
+      });
+
+    return subject.asObservable();
   }
 
-  listenStrangerStatus(stranger: OmeglestrUser): Observable<NostrEvent> {
+  listenStrangerStatus(stranger: NostrPublicUser): Observable<NostrEvent> {
     return this.npool.observe([
       {
         kinds: [ kinds.UserStatuses ],
@@ -83,19 +96,19 @@ export class TalkToStrangerNostr {
       .pipe(finalize(() => clearInterval(id)));
   }
 
-  async sendMessage(you: Required<OmeglestrUser>, stranger: OmeglestrUser, message: string): Promise<void> {
-    await this.stopTyping(you);
-    const event = await this.nostrEventFactory.createEncryptedDirectMessage(you, stranger, message);
+  async sendMessage(stranger: NostrPublicUser, message: string): Promise<void> {
+    await this.stopTyping();
+    const event = await this.nostrEventFactory.createEncryptedDirectMessage(stranger, message);
     return this.npool.event(event);
   }
 
-  async isTyping(user: Required<OmeglestrUser>): Promise<void> {
-    const wannaChatStatus = await this.nostrEventFactory.createTypingUserStatus(user);
+  async isTyping(): Promise<void> {
+    const wannaChatStatus = await this.nostrEventFactory.createTypingUserStatus();
     return this.npool.event(wannaChatStatus);
   }
 
-  async stopTyping(you: Required<OmeglestrUser>): Promise<void> {
-    const wannaChatStatus = await this.nostrEventFactory.cleanUserStatus(you);
+  async stopTyping(): Promise<void> {
+    const wannaChatStatus = await this.nostrEventFactory.cleanUserStatus();
     return this.npool.event(wannaChatStatus);
   }
 }

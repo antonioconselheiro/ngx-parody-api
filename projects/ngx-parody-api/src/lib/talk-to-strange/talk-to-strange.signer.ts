@@ -35,4 +35,25 @@ export class TalkToStrangeSigner implements NostrSigner {
   signEvent(event: Omit<NostrEvent, "id" | "pubkey" | "sig">): Promise<NostrEvent> {
     return this.#signer.signEvent(event);
   }
+
+  readonly nip04 = {
+    encrypt: async (pubkey: string, plaintext: string): Promise<string> => {
+      return this.#signer.nip04.encrypt(pubkey, plaintext);
+    },
+
+    decrypt: async (pubkey: string, ciphertext: string): Promise<string> => {
+      return this.#signer.nip04.decrypt(pubkey, ciphertext);
+    }
+  };
+
+  readonly nip44 = {
+
+    encrypt: async (pubkey: string, plaintext: string): Promise<string> => {
+      return this.#signer.nip44.encrypt(pubkey, plaintext);
+    },
+
+    decrypt: async (pubkey: string, ciphertext: string): Promise<string> => {
+      return this.#signer.nip44.decrypt(pubkey, ciphertext);
+    }
+  };
 }

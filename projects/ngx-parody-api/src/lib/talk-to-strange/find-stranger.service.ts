@@ -99,7 +99,7 @@ export class FindStrangerService {
     return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
   }
 
-  private isChatingToMe(event: NostrEvent): boolean {
+  private isChatingToPubKey(event: NostrEvent, me: NostrPublicUser): boolean {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is wannachat reply with chating? event: ', event);
 
     const result = event.tags
@@ -139,7 +139,7 @@ export class FindStrangerService {
     });
   }
 
-  private receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent): Promise<boolean | undefined> {
+  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent): Promise<boolean | undefined> {
     if (status.id === strangerWannachatEvent.id && status.content === 'wannachat') {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');
       return Promise.resolve(undefined);
@@ -149,7 +149,9 @@ export class FindStrangerService {
     sub.unsubscribe();
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[listenUserStatusUpdate] unsubscribe');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger ', strangerWannachatEvent.pubkey, ' update status: ', status);
-    if (this.isChatingToMe(status, me)) {
+
+    const me = await this.talkToStrangeSigner.getPublicUser();
+    if (this.isChatingToPubKey(status, me)) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is "chating" status confirmed, resolved with true');
       return Promise.resolve(true);
     } else {
