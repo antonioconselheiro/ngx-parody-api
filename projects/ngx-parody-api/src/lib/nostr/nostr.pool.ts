@@ -1,27 +1,20 @@
-import { Injectable } from '@angular/core';
-import { NpoolOpts } from '@domain/npool-opts.interface';
-import { NostrEvent, NostrFilter, NPool, NRelay1 } from '@nostrify/nostrify';
-import { RelayConfigService } from '@shared/relay-config/relay-config.service';
+import { Inject, Injectable } from '@angular/core';
+import { NostrEvent, NostrFilter, NPool, NPoolOpts, NRelay1 } from '@nostrify/nostrify';
 import { finalize, Observable, Subject } from 'rxjs';
+import { NpoolOpts } from '../domain/npool-opts.interface';
+import { POOL_OPTIONS_TOKEN } from '../injection-token/npool-options.token';
 
+/**
+ * when nostr-ngx get launched this class will be deprecated and
+ * the equivalent pool from nostr-ngx project will replace it
+ */
 @Injectable()
-export class NPoolService extends NPool<NRelay1> {
+export class NostrPool extends NPool<NRelay1> {
 
   constructor(
-    private relayConfigService: RelayConfigService
+    @Inject(POOL_OPTIONS_TOKEN) poolOptions: NPoolOpts<NRelay1>
   ) {
-    super({
-      open: (url) => new NRelay1(url),
-      reqRouter: async (filters) => {
-        const toupleList: Array<[string, NostrFilter[]]> = [];
-        this.relayConfigService.getConfig().forEach(relay => {
-          toupleList.push([relay, filters]);
-        });
-
-        return new Map(toupleList);
-      },
-      eventRouter: async () => this.relayConfigService.getConfig()
-    });
+    super(poolOptions);
   }
 
   observe(filters: Array<NostrFilter>, opts?: NpoolOpts): Observable<NostrEvent> {

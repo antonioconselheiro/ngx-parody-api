@@ -1,18 +1,18 @@
 import { Injectable } from '@angular/core';
-import { NpoolOpts } from '@domain/npool-opts.interface';
-import { OmeglestrUser } from '@domain/omeglestr-user';
-import { NostrEvent } from '@nostrify/nostrify';
-import { IgnoreListService } from '@shared/ignore-list/ignore-list.service';
-import { NPoolService } from '@shared/nostr/main.npool';
 import { kinds } from 'nostr-tools';
 import { Observable } from 'rxjs';
+import { NostrPool } from '../nostr/nostr.pool';
+import { TalkToStrangeSession } from './talk-to-strange.session';
+import { NpoolOpts } from '../domain/npool-opts.interface';
+import { NostrEvent } from '@nostrify/nostrify';
+import { OmeglestrUser } from '../domain/omeglestr-user';
 
 @Injectable()
 export class FindStrangerNostr {
 
   constructor(
-    private npool: NPoolService,
-    private ignoreListService: IgnoreListService
+    private npool: NostrPool,
+    private ignoreListService: TalkToStrangeSession
   ) { }
 
   listenUserStatusUpdate(pubkey: string, opts: NpoolOpts): Observable<NostrEvent> {

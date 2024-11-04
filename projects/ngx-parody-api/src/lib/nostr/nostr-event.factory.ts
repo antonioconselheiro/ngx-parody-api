@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { OmeglestrUser } from '@domain/omeglestr-user';
 import { NostrEvent } from '@nostrify/nostrify';
-import { GlobalConfigService } from '@shared/global-config/global-config.service';
 import { EventTemplate, finalizeEvent, kinds, nip04 } from 'nostr-tools';
+import { OmeglestrUser } from '../domain/omeglestr-user';
+import { TalkToStrangeConfig } from '../talk-to-strange/talk-to-strange.config';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +12,7 @@ export class NostrEventFactory {
   readonly largeExpirationTime = 30 * 60;
 
   constructor(
-    private readonly globalConfigService: GlobalConfigService
+    private readonly globalConfigService: TalkToStrangeConfig
   ) { }
 
   private getCurrentTimestamp(): number {

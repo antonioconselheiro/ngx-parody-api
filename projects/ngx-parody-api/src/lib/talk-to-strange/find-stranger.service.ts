@@ -1,26 +1,28 @@
-import { Injectable } from '@angular/core';
-import { OmeglestrUser } from '@domain/omeglestr-user';
-import { NostrEvent } from '@nostrify/nostrify';
-import { GlobalConfigService } from '@shared/global-config/global-config.service';
-import { IgnoreListService } from '@shared/ignore-list/ignore-list.service';
-import { NPoolService } from '@shared/nostr/main.npool';
-import { NostrEventFactory } from '@shared/nostr/nostr-event.factory';
-import { catchError, Subscription, throwError, timeout } from 'rxjs';
-import { FindStrangerNostr } from './find-stranger.nostr';
-import { NpoolOpts } from '@domain/npool-opts.interface';
+import { catchError, Subscription, throwError, timeout } from "rxjs";
+import { OmeglestrUser } from "../domain/omeglestr-user";
+import { TalkToStrangeSession } from "./talk-to-strange.session";
+import { NostrPool } from "../nostr/nostr.pool";
+import { NostrEventFactory } from "../nostr/nostr-event.factory";
+import { FindStrangerNostr } from "./find-stranger.nostr";
+import { NostrEvent } from "@nostrify/nostrify";
+import { TalkToStrangeConfig } from "./talk-to-strange.config";
+import { Injectable } from "@angular/core";
+import { NpoolOpts } from "../domain/npool-opts.interface";
 
 /**
  * Find strange service omegle feature for nostr
  */
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class FindStrangerService {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
     private findStrangerNostr: FindStrangerNostr,
-    private ignoreListService: IgnoreListService,
-    private config: GlobalConfigService,
-    private npool: NPoolService
+    private talkToStrangeSession: TalkToStrangeSession,
+    private config: TalkToStrangeConfig,
+    private npool: NostrPool
   ) { }
 
   publish(event: NostrEvent): Promise<void> {
@@ -35,7 +37,7 @@ export class FindStrangerService {
       const listening = this.listenChatingConfirmation(wannaChat, me, opts);
       await this.inviteToChating(me, wannaChat, includePow);
       const isChatingConfirmation = await listening;
-      this.ignoreListService.saveInList(wannaChat.pubkey);
+      this.talkToStrangeSession.saveInList(wannaChat.pubkey);
 
       if (isChatingConfirmation) {
         return Promise.resolve(OmeglestrUser.fromPubkey(wannaChat.pubkey));
@@ -62,7 +64,7 @@ export class FindStrangerService {
         )
         .subscribe({
           next: event => {
-            this.ignoreListService.saveInList(event.pubkey);
+            this.talkToStrangeSession.saveInList(event.pubkey);
             this.replyChatInvitation(event, me)
               .then(user => {
                 if (!user) {
@@ -176,7 +178,7 @@ export class FindStrangerService {
 
   createSession(): Required<OmeglestrUser> {
     const session = OmeglestrUser.create();
-    this.ignoreListService.saveInList(session.pubkey);
+    this.talkToStrangeSession.saveInList(session.pubkey);
     return session;
   }
 

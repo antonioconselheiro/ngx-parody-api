@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { OmeglestrUser } from '@domain/omeglestr-user';
-import { NPoolService } from '@shared/nostr/main.npool';
-import { NostrEventFactory } from '@shared/nostr/nostr-event.factory';
 import { kinds, nip04, NostrEvent } from 'nostr-tools';
 import { finalize, Observable, Subject } from 'rxjs';
+import { NostrEventFactory } from '../nostr/nostr-event.factory';
+import { NostrPool } from '../nostr/nostr.pool';
+import { OmeglestrUser } from '../domain/omeglestr-user';
 
 /**
  * Talk to strange service omegle feature for nostr
@@ -15,7 +15,7 @@ export class TalkToStrangerNostr {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
-    private npool: NPoolService
+    private npool: NostrPool
   ) { }
 
   async openEncryptedDirectMessage(you: Required<OmeglestrUser>, stranger: OmeglestrUser, event: NostrEvent): Promise<string> {

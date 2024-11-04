@@ -1,5 +1,8 @@
 import { generateSecretKey, getPublicKey, nip19 } from 'nostr-tools';
 
+/**
+ * TODO: remove this and create a custom signer for talk-to-stranget algorithm
+ */
 export class OmeglestrUser {
 
   /**

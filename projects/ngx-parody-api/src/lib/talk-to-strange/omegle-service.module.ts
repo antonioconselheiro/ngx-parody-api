@@ -3,6 +3,7 @@ import { NgModule } from '@angular/core';
 import { FindStrangerNostr } from './find-stranger.nostr';
 import { FindStrangerService } from './find-stranger.service';
 import { TalkToStrangerNostr } from './talk-to-stranger.nostr';
+import { TalkToStrangeSession } from './talk-to-strange.session';
 
 @NgModule({
   imports: [
@@ -11,6 +12,7 @@ import { TalkToStrangerNostr } from './talk-to-stranger.nostr';
   providers: [
     FindStrangerNostr,
     FindStrangerService,
+    TalkToStrangeSession,
     TalkToStrangerNostr
   ]
 })

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { NostrEventFactory } from './nostr-event.factory';
-import { NPoolService } from './main.npool';
+import { NostrPool } from './nostr.pool';
 
 @NgModule({
   imports: [
@@ -9,7 +9,7 @@ import { NPoolService } from './main.npool';
   ],
   providers: [
     NostrEventFactory,
-    NPoolService
+    NostrPool
   ]
 })
 export class NostrModule { }
