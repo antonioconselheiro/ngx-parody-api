@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { NostrEvent } from '@nostrify/nostrify';
-import { EventTemplate, kinds, nip04 } from 'nostr-tools';
+import { EventTemplate, kinds } from 'nostr-tools';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { TalkToStrangeConfig } from './talk-to-strange.config';
 import { TalkToStrangeSigner } from './talk-to-strange.signer';

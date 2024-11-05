@@ -10,7 +10,7 @@ import { TalkToStrangeSigner } from './talk-to-strange.signer';
  * Talk to strange service omegle feature for nostr
  */
 @Injectable()
-export class TalkToStrangerNostr {
+export class TalkToStrangeNostr {
 
   readonly updateUserCountTimeout = 1000 * 60 * 5;
 
@@ -84,7 +84,7 @@ export class TalkToStrangerNostr {
       .catch(e => {
         console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','user count lauched error', e);
         requestPending = false;
-        clearInterval(id)
+        clearInterval(id);
       });
     };
 

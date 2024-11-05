@@ -3,12 +3,13 @@ import { NostrEvent } from "@nostrify/nostrify";
 import { catchError, Subscription, throwError, timeout } from "rxjs";
 import { NostrEventFactory } from "./nostr-event.factory";
 import { NostrPool } from "../nostr/nostr.pool";
-import { FindStrangerNostr } from "./find-stranger.nostr";
+import { FindStrangeNostr } from "./find-strange.nostr";
 import { TalkToStrangeConfig } from "./talk-to-strange.config";
 import { TalkToStrangeSession } from "./talk-to-strange.session";
 import { TalkToStrangeSigner } from "./talk-to-strange.signer";
 import { NostrPublicUser } from "../domain/nostr-public-user.interface";
 import { NostrConverter } from "../nostr/nostr.converter";
+import { SearchStrangeOptions } from "./search-strange-options.interface";
 
 /**
  * Find strange service omegle feature for nostr
@@ -16,11 +17,11 @@ import { NostrConverter } from "../nostr/nostr.converter";
 @Injectable({
   providedIn: 'root'
 })
-export class FindStrangerService {
+export class FindStrangeService {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
-    private findStrangerNostr: FindStrangerNostr,
+    private findStrangerNostr: FindStrangeNostr,
     private talkToStrangeSession: TalkToStrangeSession,
     private talkToStrangeSigner: TalkToStrangeSigner,
     private nostrConverter: NostrConverter,
@@ -32,8 +33,9 @@ export class FindStrangerService {
     return this.npool.event(event);
   }
 
-  async searchStranger(opts: { signal?: AbortSignal }, powComplexity: number | false = false): Promise<NostrPublicUser> {
+  async searchStranger(opts: SearchStrangeOptions): Promise<NostrPublicUser> {
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
+    const powComplexity = opts.powComplexity || false;
     if (wannaChat) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
       const listening = this.listenChatingConfirmation(wannaChat, opts);
@@ -45,7 +47,7 @@ export class FindStrangerService {
         return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
       } else {
         await this.endSession();
-        return this.searchStranger(opts, powComplexity);
+        return this.searchStranger(opts);
       }
     }
 
@@ -59,7 +61,7 @@ export class FindStrangerService {
           catchError(err => {
             sub.unsubscribe();
             this.deleteUserHistory().then(
-              () => this.searchStranger(opts, powComplexity).then(stranger => resolve(stranger))
+              () => this.searchStranger(opts).then(stranger => resolve(stranger))
             );
 
             return throwError(() => new err)
