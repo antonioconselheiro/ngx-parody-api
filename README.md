@@ -7,13 +7,13 @@ If you code using this lib you [automatically become a cypherpunk](https://cdn.n
 
 **Not released yet**
 
-## Feature of each parody project
+## Features of each parody project
 ![Parody family](./assets/parody-api.png)
 
 ## Parody Projects
 Parody projects are jokes in the form of fully functional clients nostr.
 
- - [Omeglestr](https://github.com/antonioconselheiro/omeglestr) was was the last joke told, you can access [this here](https://antonioconselheiro.github.io/omeglestr/#/chat).
+ - [Omeglestr](https://github.com/antonioconselheiro/omeglestr) was the last joke told, you can access [this here](https://antonioconselheiro.github.io/omeglestr/#/chat).
  - [Twitter ᴾᵃʳᵒᵈʸ](https://github.com/antonioconselheiro/twitter-parody) it's a joke in progress.
 
 I'm still going to tell a lot of jokes, all algorithms with nostr that allow these clients to perform their respective social network interactions will be centralized in this library.

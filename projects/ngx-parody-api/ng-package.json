@@ -3,5 +3,12 @@
   "dest": "../../dist/ngx-parody-api",
   "lib": {
     "entryFile": "src/public-api.ts"
-  }
+  },
+  "assets": [
+    {
+      "glob": "**/*",
+      "input": "src/workers",
+      "output": "/workers"
+    }
+  ]
 }

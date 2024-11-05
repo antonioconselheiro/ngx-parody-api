@@ -12,6 +12,9 @@
   "exclude": [
     "**/*.spec.ts"
   ],
+  "include": [
+    "**/*.worker.ts"
+  ],
   "angularCompilerOptions": {
     "compilationMode": "partial"
   }

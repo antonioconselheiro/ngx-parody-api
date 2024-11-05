@@ -130,12 +130,16 @@ export class NostrEventFactory {
     if (includePow) {
       const pubkey = await this.talkToStrangeSigner.getPublicKey()
       const { data: eventSigner } = await new Promise<{ data: EventTemplate }>(resolve => {
-        const worker = new Worker(new URL('../../workers/nostr-event-pow.worker', import.meta.url));
+        const worker = new Worker(new URL('./workers/nostr-event-pow.worker', import.meta.url), { type: 'module' });
         worker.onmessage = ({ data }) => {
-          resolve(data)
+          resolve(data);
           worker.terminate();
         };
-        worker.postMessage({ ...eventTemplate, pubkey });
+
+        worker.postMessage({
+          event: { ...eventTemplate, pubkey },
+          complexity: 11
+        });
       });
 
       eventTemplate = eventSigner;
