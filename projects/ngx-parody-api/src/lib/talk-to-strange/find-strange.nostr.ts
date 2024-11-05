@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { TalkToStrangeSession } from './talk-to-strange.session';
 import { NostrPool } from '../nostr/nostr.pool';
+import { SearchStrangeOptions } from './search-strange-options.interface';
 
 @Injectable()
 export class FindStrangeNostr {
@@ -26,11 +27,11 @@ export class FindStrangeNostr {
     return this.npool.observe(filters, opts);
   }
 
-  queryWannachatResponse(user: NostrPublicUser, opts: { signal?: AbortSignal }): Promise<NostrEvent[]> {
+  queryChatConfirmation(user: NostrPublicUser, opts: SearchStrangeOptions): Promise<NostrEvent[]> {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ 'chating', 'omegle' ],
+        '#t': [ 'confirm', ...opts.searchTags ],
         '#p': [ user.pubkey ],
         limit: 1
       }
@@ -40,11 +41,11 @@ export class FindStrangeNostr {
     return this.npool.query(filters, opts);
   }
 
-  listenWannachatResponse(user: NostrPublicUser, opts: { signal?: AbortSignal }): Observable<NostrEvent> {
+  listenChatConfirmation(user: NostrPublicUser, opts: SearchStrangeOptions): Observable<NostrEvent> {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ 'chating', 'omegle' ],
+        '#t': [ 'confirm', ...opts.searchTags ],
         '#p': [ user.pubkey ],
         limit: 1
       }
@@ -54,13 +55,14 @@ export class FindStrangeNostr {
     return this.npool.observe(filters, opts);
   }
 
-  async queryChatAvailable(opts: { signal?: AbortSignal }): Promise<NostrEvent | null> {
+  async queryChatAvailable(opts: SearchStrangeOptions): Promise<NostrEvent | null> {
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1_000);
     const timeInSeconds = (60 * 10);
+    const status = opts.statusName || 'wannachat';
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ 'wannachat', 'omegle' ],
+        '#t': [ status, ...opts.searchTags ],
         since: currentTimeInSeconds - timeInSeconds
       }
     ];

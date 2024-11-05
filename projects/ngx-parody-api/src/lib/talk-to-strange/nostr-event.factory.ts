@@ -4,6 +4,7 @@ import { EventTemplate, kinds } from 'nostr-tools';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { TalkToStrangeConfig } from './talk-to-strange.config';
 import { TalkToStrangeSigner } from './talk-to-strange.signer';
+import { SearchStrangeOptions } from './search-strange-options.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -60,13 +61,16 @@ export class NostrEventFactory {
    * NIP 38
    * https://github.com/nostr-protocol/nips/blob/master/38.md
    */
-  createWannaChatUserStatus(powComplexity: number | false = false): Promise<NostrEvent> {
+  createWannaChatUserStatus(opts: SearchStrangeOptions): Promise<NostrEvent> {
     const expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
-    return this.createUserStatus('wannachat', [
+    const statusName = opts.statusName || 'wannachat';
+    const useTags = opts.userTags.map(tag => ['t', tag]);
+
+    return this.createUserStatus(statusName, [
         [ 'expiration', this.getExpirationTimestamp(expireIn) ],
-        [ 't', 'omegle' ],
-        [ 't', 'wannachat' ]
-      ], powComplexity);
+        [ 't', statusName ],
+        ...useTags
+      ], opts.powComplexity || false);
   }
 
   createDisconnectedUserStatus(): Promise<NostrEvent> {
@@ -77,18 +81,19 @@ export class NostrEventFactory {
 
   createTypingUserStatus(): Promise<NostrEvent> {
     return this.createUserStatus('typing', [
-      [ 't', 'omegle' ],
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
     ]);
   }
 
-  createChatingUserStatus(strange: NostrPublicUser, powComplexity: number | false = false): Promise<NostrEvent> {
-    return this.createUserStatus('chating', [
+  createChatingUserStatus(strange: NostrPublicUser, opts: SearchStrangeOptions): Promise<NostrEvent> {
+    const useTags = opts.userTags.map(tag => ['t', tag]);
+
+    return this.createUserStatus('confirm', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
       [ 'p', strange.pubkey ],
-      [ 't', 'omegle' ],
-      [ 't', 'chating' ]
-    ], powComplexity);
+      [ 't', 'confirm' ],
+      ...useTags
+    ], opts.powComplexity || false);
   }
 
   deleteUserHistory(): Promise<NostrEvent> {
@@ -108,8 +113,7 @@ export class NostrEventFactory {
 
   cleanUserStatus(): Promise<NostrEvent> {
     return this.createUserStatus('', [
-      [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
-      [ 't', 'omegle' ]
+      [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
     ]);
   }
 

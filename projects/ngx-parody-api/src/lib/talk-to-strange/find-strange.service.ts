@@ -35,11 +35,11 @@ export class FindStrangeService {
 
   async searchStranger(opts: SearchStrangeOptions): Promise<NostrPublicUser> {
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
-    const powComplexity = opts.powComplexity || false;
+
     if (wannaChat) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
       const listening = this.listenChatingConfirmation(wannaChat, opts);
-      await this.inviteToChating(wannaChat, powComplexity);
+      await this.inviteToChating(wannaChat, opts);
       const isChatingConfirmation = await listening;
       this.talkToStrangeSession.saveInList(wannaChat.pubkey);
 
@@ -52,10 +52,10 @@ export class FindStrangeService {
     }
 
     const currentUser = await this.talkToStrangeSigner.getPublicUser();
-    await this.publishWannaChatStatus(powComplexity);
+    await this.publishWannaChatStatus(opts);
     return new Promise(resolve => {
       const sub = this.findStrangerNostr
-        .listenWannachatResponse(currentUser, opts)
+        .listenChatConfirmation(currentUser, opts)
         .pipe(
           timeout(this.config.wannachatStatusDefaultTimeoutInSeconds * 1000),
           catchError(err => {
@@ -70,7 +70,7 @@ export class FindStrangeService {
         .subscribe({
           next: event => {
             this.talkToStrangeSession.saveInList(event.pubkey);
-            this.replyChatInvitation(event)
+            this.replyChatInvitation(event, opts)
               .then(user => {
                 if (!user) {
                   throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
@@ -90,11 +90,11 @@ export class FindStrangeService {
     });
   }
 
-  async replyChatInvitation(event: NostrEvent): Promise<NostrPublicUser | void> {
+  async replyChatInvitation(event: NostrEvent, opts: SearchStrangeOptions): Promise<NostrPublicUser | void> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'event was listen: ', event);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
-    await this.inviteToChating(event);
+    await this.inviteToChating(event, opts);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'replied... resolving... ');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[searchStranger] unsubscribe');
     return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
@@ -111,12 +111,12 @@ export class FindStrangeService {
     return !!result.length;
   }
 
-  private inviteToChating(strangeStatus: NostrEvent, powComplexity: number | false = false): Promise<NostrEvent> {
+  private inviteToChating(strangeStatus: NostrEvent, opts: SearchStrangeOptions): Promise<NostrEvent> {
     const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangeStatus.pubkey);
-    return this.publishChatInviteStatus(stranger, powComplexity);
+    return this.publishChatInviteStatus(stranger, opts);
   }
 
-  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: { signal?: AbortSignal }): Promise<boolean> {
+  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: SearchStrangeOptions): Promise<boolean> {
     return new Promise<boolean>(resolve => {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'listening status update from: ', strangerWannachatEvent.pubkey);
       // FIXME: ensure that the error will make the unsubscription trigger the abort signal sending, to clean filters in relay
@@ -127,7 +127,7 @@ export class FindStrangeService {
           catchError(err => throwError(() => new Error('chat confirmation timeout after 5s waiting, there is no stranger connected to this session', { cause: err })))
         )
         .subscribe({
-          next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent).then(is => {
+          next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent, opts).then(is => {
             if (typeof is === 'boolean') {
               resolve(is);
             }
@@ -140,8 +140,9 @@ export class FindStrangeService {
     });
   }
 
-  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent): Promise<boolean | undefined> {
-    if (status.id === strangerWannachatEvent.id && status.content === 'wannachat') {
+  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent, opts: SearchStrangeOptions): Promise<boolean | undefined> {
+    const statusName = opts.statusName || 'wannachat';
+    if (status.id === strangerWannachatEvent.id && status.content === statusName) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');
       return Promise.resolve(undefined);
     }
@@ -153,7 +154,7 @@ export class FindStrangeService {
 
     const me = await this.talkToStrangeSigner.getPublicUser();
     if (this.isChatingToPubKey(status, me)) {
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is "chating" status confirmed, resolved with true');
+      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is "confirm" status confirming chating, resolved with true');
       return Promise.resolve(true);
     } else {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'unexpected status was given, resolved with false, event: ', status);
@@ -161,16 +162,16 @@ export class FindStrangeService {
     }
   }
 
-  private async publishWannaChatStatus(powComplexity: number | false = false): Promise<NostrEvent> {
-    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(powComplexity);
+  private async publishWannaChatStatus(opts: SearchStrangeOptions): Promise<NostrEvent> {
+    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(opts);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', wannaChatStatus);
     await this.npool.event(wannaChatStatus);
 
     return Promise.resolve(wannaChatStatus);
   }
 
-  private async publishChatInviteStatus(stranger: NostrPublicUser, powComplexity: number | false = false): Promise<NostrEvent> {
-    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, powComplexity);
+  private async publishChatInviteStatus(stranger: NostrPublicUser, opts: SearchStrangeOptions): Promise<NostrEvent> {
+    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, opts);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', chatingStatus);
     await this.npool.event(chatingStatus);
 

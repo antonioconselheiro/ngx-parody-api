@@ -8,4 +8,4 @@ npm pack;
 
 cd ../..;
 chmod 777 -R dist;
-mv ./dist/ngx-parody-api/belomonte-ngx-parody-api-1.0.0.tgz ./dist/belomonte-ngx-parody-api-1.0.0.tgz
+mv ./dist/ngx-parody-api/belomonte-ngx-parody-api-0.1.0.tgz ./dist/belomonte-ngx-parody-api-0.1.0.tgz
