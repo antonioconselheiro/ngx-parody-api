@@ -6,6 +6,7 @@
   "peerDependencies": {
     "@angular/common": "^18.2.0",
     "@angular/core": "^18.2.0",
+    "nostr-tools": "^2.10.1",
     "@nostrify/nostrify": "npm:@jsr/nostrify__nostrify@^0.36.1"
   },
   "dependencies": {
