@@ -2,7 +2,7 @@ import { WindowNostr } from 'nostr-tools/nip07';
 
 export * from './lib/injection-token/npool-options.token';
 export * from './lib/domain/nostr-public-user.interface';
-export * from './lib/talk-to-strange/omegle-service.module';
+export * from './lib/talk-to-strange/talk-to-stranger.module';
 export * from './lib/talk-to-strange/find-stranger.nostr';
 export * from './lib/talk-to-strange/find-stranger.service';
 export * from './lib/talk-to-strange/talk-to-strange.config';

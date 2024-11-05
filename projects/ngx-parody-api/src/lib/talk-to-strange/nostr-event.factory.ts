@@ -60,13 +60,13 @@ export class NostrEventFactory {
    * NIP 38
    * https://github.com/nostr-protocol/nips/blob/master/38.md
    */
-  createWannaChatUserStatus(includePow = false): Promise<NostrEvent> {
+  createWannaChatUserStatus(powComplexity: number | false = false): Promise<NostrEvent> {
     const expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
     return this.createUserStatus('wannachat', [
         [ 'expiration', this.getExpirationTimestamp(expireIn) ],
         [ 't', 'omegle' ],
         [ 't', 'wannachat' ]
-      ], includePow);
+      ], powComplexity);
   }
 
   createDisconnectedUserStatus(): Promise<NostrEvent> {
@@ -82,13 +82,13 @@ export class NostrEventFactory {
     ]);
   }
 
-  createChatingUserStatus(strange: NostrPublicUser, includePow = false): Promise<NostrEvent> {
+  createChatingUserStatus(strange: NostrPublicUser, powComplexity: number | false = false): Promise<NostrEvent> {
     return this.createUserStatus('chating', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
       [ 'p', strange.pubkey ],
       [ 't', 'omegle' ],
       [ 't', 'chating' ]
-    ], includePow);
+    ], powComplexity);
   }
 
   deleteUserHistory(): Promise<NostrEvent> {
@@ -113,7 +113,7 @@ export class NostrEventFactory {
     ]);
   }
 
-  private async createUserStatus(status: string, customTags?: string[][], includePow = false): Promise<NostrEvent> {
+  private async createUserStatus(status: string, customTags?: string[][], powComplexity: number | false = false): Promise<NostrEvent> {
     const tags = [
       ['d', 'general'],
       ...(customTags || [])
@@ -127,7 +127,7 @@ export class NostrEventFactory {
       tags
     };
 
-    if (includePow) {
+    if (powComplexity) {
       const pubkey = await this.talkToStrangeSigner.getPublicKey()
       const { data: eventSigner } = await new Promise<{ data: EventTemplate }>(resolve => {
         const worker = new Worker(new URL('./workers/nostr-event-pow.worker', import.meta.url), { type: 'module' });
@@ -138,7 +138,7 @@ export class NostrEventFactory {
 
         worker.postMessage({
           event: { ...eventTemplate, pubkey },
-          complexity: 11
+          complexity: powComplexity
         });
       });
 

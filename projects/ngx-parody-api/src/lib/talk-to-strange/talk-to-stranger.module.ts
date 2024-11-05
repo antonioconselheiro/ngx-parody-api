@@ -6,6 +6,7 @@ import { TalkToStrangerNostr } from './talk-to-stranger.nostr';
 import { TalkToStrangeSession } from './talk-to-strange.session';
 import { TalkToStrangeSigner } from './talk-to-strange.signer';
 import { NostrModule } from '../nostr/nostr.module';
+import { TalkToStrangeConfig } from './talk-to-strange.config';
 
 @NgModule({
   imports: [
@@ -17,7 +18,8 @@ import { NostrModule } from '../nostr/nostr.module';
     FindStrangerService,
     TalkToStrangeSession,
     TalkToStrangerNostr,
-    TalkToStrangeSigner
+    TalkToStrangeSigner,
+    TalkToStrangeConfig
   ]
 })
-export class OmegleServiceModule { }
+export class TalkToStrangerModule { }

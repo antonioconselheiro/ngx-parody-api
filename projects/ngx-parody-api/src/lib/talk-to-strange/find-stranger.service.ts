@@ -32,13 +32,12 @@ export class FindStrangerService {
     return this.npool.event(event);
   }
 
-  async searchStranger(opts: { signal?: AbortSignal }): Promise<NostrPublicUser> {
+  async searchStranger(opts: { signal?: AbortSignal }, powComplexity: number | false = false): Promise<NostrPublicUser> {
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
-    const includePow = true;
     if (wannaChat) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
       const listening = this.listenChatingConfirmation(wannaChat, opts);
-      await this.inviteToChating(wannaChat, includePow);
+      await this.inviteToChating(wannaChat, powComplexity);
       const isChatingConfirmation = await listening;
       this.talkToStrangeSession.saveInList(wannaChat.pubkey);
 
@@ -46,12 +45,12 @@ export class FindStrangerService {
         return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
       } else {
         await this.endSession();
-        return this.searchStranger(opts);
+        return this.searchStranger(opts, powComplexity);
       }
     }
 
     const currentUser = await this.talkToStrangeSigner.getPublicUser();
-    await this.publishWannaChatStatus(includePow);
+    await this.publishWannaChatStatus(powComplexity);
     return new Promise(resolve => {
       const sub = this.findStrangerNostr
         .listenWannachatResponse(currentUser, opts)
@@ -60,7 +59,7 @@ export class FindStrangerService {
           catchError(err => {
             sub.unsubscribe();
             this.deleteUserHistory().then(
-              () => this.searchStranger(opts).then(stranger => resolve(stranger))
+              () => this.searchStranger(opts, powComplexity).then(stranger => resolve(stranger))
             );
 
             return throwError(() => new err)
@@ -110,9 +109,9 @@ export class FindStrangerService {
     return !!result.length;
   }
 
-  private inviteToChating(strangeStatus: NostrEvent, includePow = false): Promise<NostrEvent> {
+  private inviteToChating(strangeStatus: NostrEvent, powComplexity: number | false = false): Promise<NostrEvent> {
     const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangeStatus.pubkey);
-    return this.publishChatInviteStatus(stranger, includePow);
+    return this.publishChatInviteStatus(stranger, powComplexity);
   }
 
   private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: { signal?: AbortSignal }): Promise<boolean> {
@@ -160,16 +159,16 @@ export class FindStrangerService {
     }
   }
 
-  private async publishWannaChatStatus(includePow = false): Promise<NostrEvent> {
-    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(includePow);
+  private async publishWannaChatStatus(powComplexity: number | false = false): Promise<NostrEvent> {
+    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(powComplexity);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', wannaChatStatus);
     await this.npool.event(wannaChatStatus);
 
     return Promise.resolve(wannaChatStatus);
   }
 
-  private async publishChatInviteStatus(stranger: NostrPublicUser, includePow = false): Promise<NostrEvent> {
-    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, includePow);
+  private async publishChatInviteStatus(stranger: NostrPublicUser, powComplexity: number | false = false): Promise<NostrEvent> {
+    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, powComplexity);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', chatingStatus);
     await this.npool.event(chatingStatus);
 
