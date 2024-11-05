@@ -1,4 +1,4 @@
-export interface SearchStrangeOptions {
+export interface SearchStrangerOptions {
 
   /**
    * Allow to abort the find strang process
@@ -33,7 +33,7 @@ export interface SearchStrangeOptions {
 
   /**
    * Will publish user status with these configured tags.
-   * In omeglestr is configured as ["omegle"] to be available for omegle stranges.
+   * In omeglestr is configured as ["omegle"] to be available for omegle strangers.
    */
   userTags: Array<string>;
 }

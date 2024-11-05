@@ -7,7 +7,7 @@ import { npubEncode } from 'nostr-tools/nip19';
 @Injectable({
   providedIn: 'root'
 })
-export class TalkToStrangeSigner implements NostrSigner {
+export class TalkToStrangerSigner implements NostrSigner {
 
   #signer: NSecSigner;
 

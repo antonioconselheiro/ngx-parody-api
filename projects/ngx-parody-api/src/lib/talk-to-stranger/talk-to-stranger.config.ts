@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 
 /**
- * Centralize shared constants for talk to strange algorithm
+ * Centralize shared constants for talk to stranger algorithm
  */
 @Injectable()
-export class TalkToStrangeConfig {
+export class TalkToStrangerConfig {
 
   readonly wannachatStatusDefaultTimeoutInSeconds = 20;
 }

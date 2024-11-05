@@ -4,29 +4,29 @@ import { finalize, Observable, Subject } from 'rxjs';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { NostrEventFactory } from './nostr-event.factory';
-import { TalkToStrangeSigner } from './talk-to-strange.signer';
+import { TalkToStrangerSigner } from './talk-to-stranger.signer';
 
 /**
- * Talk to strange service omegle feature for nostr
+ * Talk to stranger service omegle feature for nostr
  */
 @Injectable()
-export class TalkToStrangeNostr {
+export class TalkToStrangerNostr {
 
   readonly updateUserCountTimeout = 1000 * 60 * 5;
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
-    private talkToStrangeSigner: TalkToStrangeSigner,
+    private talkToStrangerSigner: TalkToStrangerSigner,
     private npool: NostrPool
   ) { }
 
   async openEncryptedDirectMessage(stranger: NostrPublicUser, event: NostrEvent): Promise<string> {
-    return this.talkToStrangeSigner.nip04.decrypt(stranger.pubkey, event.content);
+    return this.talkToStrangerSigner.nip04.decrypt(stranger.pubkey, event.content);
   }
 
   listenMessages(stranger: NostrPublicUser): Observable<NostrEvent> {
     const subject = new Subject<NostrEvent>();
-    this.talkToStrangeSigner
+    this.talkToStrangerSigner
       .getPublicKey()
       .then(pubkey => {
         this.npool.observe([

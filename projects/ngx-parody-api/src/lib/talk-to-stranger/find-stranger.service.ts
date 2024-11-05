@@ -3,29 +3,29 @@ import { NostrEvent } from "@nostrify/nostrify";
 import { catchError, Subscription, throwError, timeout } from "rxjs";
 import { NostrEventFactory } from "./nostr-event.factory";
 import { NostrPool } from "../nostr/nostr.pool";
-import { FindStrangeNostr } from "./find-strange.nostr";
-import { TalkToStrangeConfig } from "./talk-to-strange.config";
-import { TalkToStrangeSession } from "./talk-to-strange.session";
-import { TalkToStrangeSigner } from "./talk-to-strange.signer";
+import { FindStrangerNostr } from "./find-stranger.nostr";
+import { TalkToStrangerConfig } from "./talk-to-stranger.config";
+import { TalkToStrangerSession } from "./talk-to-stranger.session";
+import { TalkToStrangerSigner } from "./talk-to-stranger.signer";
 import { NostrPublicUser } from "../domain/nostr-public-user.interface";
 import { NostrConverter } from "../nostr/nostr.converter";
-import { SearchStrangeOptions } from "./search-strange-options.interface";
+import { SearchStrangerOptions } from "./search-stranger-options.interface";
 
 /**
- * Find strange service omegle feature for nostr
+ * Find stranger service omegle feature for nostr
  */
 @Injectable({
   providedIn: 'root'
 })
-export class FindStrangeService {
+export class FindStrangerService {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
-    private findStrangerNostr: FindStrangeNostr,
-    private talkToStrangeSession: TalkToStrangeSession,
-    private talkToStrangeSigner: TalkToStrangeSigner,
+    private findStrangerNostr: FindStrangerNostr,
+    private talkToStrangerSession: TalkToStrangerSession,
+    private talkToStrangerSigner: TalkToStrangerSigner,
     private nostrConverter: NostrConverter,
-    private config: TalkToStrangeConfig,
+    private config: TalkToStrangerConfig,
     private npool: NostrPool
   ) { }
 
@@ -33,7 +33,7 @@ export class FindStrangeService {
     return this.npool.event(event);
   }
 
-  async searchStranger(opts: SearchStrangeOptions): Promise<NostrPublicUser> {
+  async searchStranger(opts: SearchStrangerOptions): Promise<NostrPublicUser> {
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
 
     if (wannaChat) {
@@ -41,7 +41,7 @@ export class FindStrangeService {
       const listening = this.listenChatingConfirmation(wannaChat, opts);
       await this.inviteToChating(wannaChat, opts);
       const isChatingConfirmation = await listening;
-      this.talkToStrangeSession.saveInList(wannaChat.pubkey);
+      this.talkToStrangerSession.saveInList(wannaChat.pubkey);
 
       if (isChatingConfirmation) {
         return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
@@ -51,7 +51,7 @@ export class FindStrangeService {
       }
     }
 
-    const currentUser = await this.talkToStrangeSigner.getPublicUser();
+    const currentUser = await this.talkToStrangerSigner.getPublicUser();
     await this.publishWannaChatStatus(opts);
     return new Promise(resolve => {
       const sub = this.findStrangerNostr
@@ -69,7 +69,7 @@ export class FindStrangeService {
         )
         .subscribe({
           next: event => {
-            this.talkToStrangeSession.saveInList(event.pubkey);
+            this.talkToStrangerSession.saveInList(event.pubkey);
             this.replyChatInvitation(event, opts)
               .then(user => {
                 if (!user) {
@@ -90,7 +90,7 @@ export class FindStrangeService {
     });
   }
 
-  async replyChatInvitation(event: NostrEvent, opts: SearchStrangeOptions): Promise<NostrPublicUser | void> {
+  async replyChatInvitation(event: NostrEvent, opts: SearchStrangerOptions): Promise<NostrPublicUser | void> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'event was listen: ', event);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
@@ -111,12 +111,12 @@ export class FindStrangeService {
     return !!result.length;
   }
 
-  private inviteToChating(strangeStatus: NostrEvent, opts: SearchStrangeOptions): Promise<NostrEvent> {
-    const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangeStatus.pubkey);
+  private inviteToChating(strangerStatus: NostrEvent, opts: SearchStrangerOptions): Promise<NostrEvent> {
+    const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangerStatus.pubkey);
     return this.publishChatInviteStatus(stranger, opts);
   }
 
-  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: SearchStrangeOptions): Promise<boolean> {
+  private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: SearchStrangerOptions): Promise<boolean> {
     return new Promise<boolean>(resolve => {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'listening status update from: ', strangerWannachatEvent.pubkey);
       // FIXME: ensure that the error will make the unsubscription trigger the abort signal sending, to clean filters in relay
@@ -140,7 +140,7 @@ export class FindStrangeService {
     });
   }
 
-  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent, opts: SearchStrangeOptions): Promise<boolean | undefined> {
+  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent, opts: SearchStrangerOptions): Promise<boolean | undefined> {
     const statusName = opts.statusName || 'wannachat';
     if (status.id === strangerWannachatEvent.id && status.content === statusName) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');
@@ -152,7 +152,7 @@ export class FindStrangeService {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[listenUserStatusUpdate] unsubscribe');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger ', strangerWannachatEvent.pubkey, ' update status: ', status);
 
-    const me = await this.talkToStrangeSigner.getPublicUser();
+    const me = await this.talkToStrangerSigner.getPublicUser();
     if (this.isChatingToPubKey(status, me)) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'is "confirm" status confirming chating, resolved with true');
       return Promise.resolve(true);
@@ -162,7 +162,7 @@ export class FindStrangeService {
     }
   }
 
-  private async publishWannaChatStatus(opts: SearchStrangeOptions): Promise<NostrEvent> {
+  private async publishWannaChatStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
     const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(opts);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', wannaChatStatus);
     await this.npool.event(wannaChatStatus);
@@ -170,7 +170,7 @@ export class FindStrangeService {
     return Promise.resolve(wannaChatStatus);
   }
 
-  private async publishChatInviteStatus(stranger: NostrPublicUser, opts: SearchStrangeOptions): Promise<NostrEvent> {
+  private async publishChatInviteStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
     const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, opts);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'updating my status to: ', chatingStatus);
     await this.npool.event(chatingStatus);
@@ -185,8 +185,8 @@ export class FindStrangeService {
   }
 
   async createSession(): Promise<NostrPublicUser> {
-    const session = await this.talkToStrangeSigner.recreateSession();
-    this.talkToStrangeSession.saveInList(session.pubkey);
+    const session = await this.talkToStrangerSigner.recreateSession();
+    this.talkToStrangerSession.saveInList(session.pubkey);
     console.info(new Date().toLocaleString(), 'me: ', session.pubkey);
     return session;
   }

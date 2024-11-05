@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { NostrEvent } from '@nostrify/nostrify';
 import { EventTemplate, kinds } from 'nostr-tools';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
-import { TalkToStrangeConfig } from './talk-to-strange.config';
-import { TalkToStrangeSigner } from './talk-to-strange.signer';
-import { SearchStrangeOptions } from './search-strange-options.interface';
+import { TalkToStrangerConfig } from './talk-to-stranger.config';
+import { TalkToStrangerSigner } from './talk-to-stranger.signer';
+import { SearchStrangerOptions } from './search-stranger-options.interface';
 
 @Injectable({
   providedIn: 'root'
@@ -14,8 +14,8 @@ export class NostrEventFactory {
   readonly largeExpirationTime = 30 * 60;
 
   constructor(
-    private talkToStrangeConfig: TalkToStrangeConfig,
-    private talkToStrangeSigner: TalkToStrangeSigner
+    private talkToStrangerConfig: TalkToStrangerConfig,
+    private talkToStrangerSigner: TalkToStrangerSigner
   ) { }
 
   private unixTimeNow(): number {
@@ -28,7 +28,7 @@ export class NostrEventFactory {
    * @returns expiration timestamp
    */
   private getExpirationTimestamp(
-    expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds
+    expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds
   ): string {
     const oneMillisecond = 1000;
     const expirationTimestamp = Math.floor(Date.now() / oneMillisecond) + expireIn;
@@ -41,7 +41,7 @@ export class NostrEventFactory {
    * https://github.com/nbd-wtf/nostr-tools/blob/master/nip04.test.ts
    */
   async createEncryptedDirectMessage(stranger: NostrPublicUser, message: string): Promise<NostrEvent> {
-    const encriptedMessage = await this.talkToStrangeSigner.nip04.encrypt(stranger.pubkey, message);
+    const encriptedMessage = await this.talkToStrangerSigner.nip04.encrypt(stranger.pubkey, message);
 
     const unsignedEvent: EventTemplate = {
       kind: kinds.EncryptedDirectMessage,
@@ -54,15 +54,15 @@ export class NostrEventFactory {
       ]
     };
 
-    return this.talkToStrangeSigner.signEvent(unsignedEvent);
+    return this.talkToStrangerSigner.signEvent(unsignedEvent);
   }
 
   /**
    * NIP 38
    * https://github.com/nostr-protocol/nips/blob/master/38.md
    */
-  createWannaChatUserStatus(opts: SearchStrangeOptions): Promise<NostrEvent> {
-    const expireIn = this.talkToStrangeConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
+  createWannaChatUserStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
+    const expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
     const statusName = opts.statusName || 'wannachat';
     const useTags = opts.userTags.map(tag => ['t', tag]);
 
@@ -85,12 +85,12 @@ export class NostrEventFactory {
     ]);
   }
 
-  createChatingUserStatus(strange: NostrPublicUser, opts: SearchStrangeOptions): Promise<NostrEvent> {
+  createChatingUserStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
     const useTags = opts.userTags.map(tag => ['t', tag]);
 
     return this.createUserStatus('confirm', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
-      [ 'p', strange.pubkey ],
+      [ 'p', stranger.pubkey ],
       [ 't', 'confirm' ],
       ...useTags
     ], opts.powComplexity || false);
@@ -108,7 +108,7 @@ export class NostrEventFactory {
       content: ''
     }
 
-    return this.talkToStrangeSigner.signEvent(template);
+    return this.talkToStrangerSigner.signEvent(template);
   }
 
   cleanUserStatus(): Promise<NostrEvent> {
@@ -132,7 +132,7 @@ export class NostrEventFactory {
     };
 
     if (powComplexity) {
-      const pubkey = await this.talkToStrangeSigner.getPublicKey()
+      const pubkey = await this.talkToStrangerSigner.getPublicKey()
       const { data: eventSigner } = await new Promise<{ data: EventTemplate }>(resolve => {
         const worker = new Worker(new URL('./workers/nostr-event-pow.worker', import.meta.url), { type: 'module' });
         worker.onmessage = ({ data }) => {
@@ -149,6 +149,6 @@ export class NostrEventFactory {
       eventTemplate = eventSigner;
     }
 
-    return this.talkToStrangeSigner.signEvent(eventTemplate);
+    return this.talkToStrangerSigner.signEvent(eventTemplate);
   }
 }

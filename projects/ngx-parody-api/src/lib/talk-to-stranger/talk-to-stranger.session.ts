@@ -7,7 +7,7 @@ import { Injectable } from '@angular/core';
 @Injectable({
   providedIn: 'root'
 })
-export class TalkToStrangeSession {
+export class TalkToStrangerSession {
 
   private pubkeySet = new Set<string>();
 
@@ -17,23 +17,23 @@ export class TalkToStrangeSession {
   
   private loadList() {
     try {
-      const serialized = sessionStorage.getItem('talkToStrangeIgnoreList');
+      const serialized = sessionStorage.getItem('talkToStrangerIgnoreList');
       if (serialized) {
         let ignoreList = JSON.parse(serialized);
         if (ignoreList instanceof Array) {
           this.pubkeySet = new Set(ignoreList);
         } else {
-          sessionStorage.setItem('talkToStrangeIgnoreList', '[]');
+          sessionStorage.setItem('talkToStrangerIgnoreList', '[]');
         }
       }
     } catch {
-      sessionStorage.setItem('talkToStrangeIgnoreList', '[]');
+      sessionStorage.setItem('talkToStrangerIgnoreList', '[]');
     }
   }
 
   saveInList(pubkey: string): void {
     this.pubkeySet.add(pubkey);
-    sessionStorage.setItem('talkToStrangeIgnoreList', JSON.stringify([...this.pubkeySet]));
+    sessionStorage.setItem('talkToStrangerIgnoreList', JSON.stringify([...this.pubkeySet]));
   }
 
   isInList(pubkey: string): boolean {
