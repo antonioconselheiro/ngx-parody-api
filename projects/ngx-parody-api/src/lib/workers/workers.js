@@ -1,1 +1,0 @@
-export * from "../esm2022/lib/workers/nostr-event-pow.worker.js";

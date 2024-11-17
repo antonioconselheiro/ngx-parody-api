@@ -70,7 +70,7 @@ export class NostrEventFactory {
         [ 'expiration', this.getExpirationTimestamp(expireIn) ],
         [ 't', statusName ],
         ...useTags
-      ], opts.powComplexity || false);
+      ]);
   }
 
   createDisconnectedUserStatus(): Promise<NostrEvent> {
@@ -93,7 +93,7 @@ export class NostrEventFactory {
       [ 'p', stranger.pubkey ],
       [ 't', 'confirm' ],
       ...useTags
-    ], opts.powComplexity || false);
+    ]);
   }
 
   deleteUserHistory(): Promise<NostrEvent> {
@@ -117,7 +117,7 @@ export class NostrEventFactory {
     ]);
   }
 
-  private async createUserStatus(status: string, customTags?: string[][], powComplexity: number | false = false): Promise<NostrEvent> {
+  private async createUserStatus(status: string, customTags?: string[][]): Promise<NostrEvent> {
     const tags = [
       ['d', 'general'],
       ...(customTags || [])
@@ -130,24 +130,6 @@ export class NostrEventFactory {
       created_at: this.unixTimeNow(),
       tags
     };
-
-    if (powComplexity) {
-      const pubkey = await this.talkToStrangerSigner.getPublicKey()
-      const { data: eventSigner } = await new Promise<{ data: EventTemplate }>(resolve => {
-        const worker = new Worker(new URL('../workers/nostr-event-pow.worker', import.meta.url), { type: 'module' });
-        worker.onmessage = ({ data }) => {
-          resolve(data);
-          worker.terminate();
-        };
-
-        worker.postMessage({
-          event: { ...eventTemplate, pubkey },
-          complexity: powComplexity
-        });
-      });
-
-      eventTemplate = eventSigner;
-    }
 
     return this.talkToStrangerSigner.signEvent(eventTemplate);
   }

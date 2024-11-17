@@ -20,9 +20,6 @@
             },
             "development": {
               "tsConfig": "projects/ngx-parody-api/tsconfig.lib.json"
-            },
-            "webWorkerTsConfig": {
-              "tsConfig": "tsconfig.worker.json"
             }
           },
           "defaultConfiguration": "production"
