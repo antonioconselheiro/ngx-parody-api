@@ -13,6 +13,7 @@ export * from './lib/talk-to-stranger/talk-to-stranger.session';
 export * from './lib/nostr/nostr.module';
 export * from './lib/nostr/nostr.converter';
 export * from './lib/nostr/nostr.pool';
+export * from './lib/workers/nostr-event-pow.worker';
 
 declare global {
   interface Window {

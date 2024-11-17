@@ -6,9 +6,9 @@
   },
   "assets": [
     {
-      "glob": "**/*",
-      "input": "src/workers",
-      "output": "/workers"
+      "glob": "**/workers.js",
+      "input": "./src/lib/workers",
+      "output": "fesm2022"
     }
   ]
 }

@@ -48,7 +48,7 @@ The packages `@belomonte/nostr-ngx`, `@belomonte/nostr-gui-ngx` and `@belomonte/
 `ng update` in angular cli 18 or lower [launches error](https://github.com/angular/angular-cli/issues/28834) when need update dependencies from registries different from npm either with .npmrc file in the project, so, if you need to update your project you may have to update this package "manually" by running this command again.
 
 ## How To Use
-
+### Configure
 The only available social network feature in this `@belomonte/ngx-parody-api` version is the `Talk to Stranger` feature from [Omeglestr](https://github.com/antonioconselheiro/omeglestr).
 
 You must import TalkToStrangerModule and provide NPool configs, in the example below is created a single module just to provide these module and it's configs:
@@ -126,4 +126,5 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 }
 ```
 
-`RelayConfigService` is a custom service from `omeglestr` that allow user configure his relays, you can copy this approuch from `omeglestr` or can just set the relays hardcoded.
+`RelayConfigService` is a custom service from `omeglestr` that read user choosen relay, you can copy this approuch from `omeglestr`, can set the relays hardcoded or can create a custom service.
+

@@ -20,6 +20,9 @@
             },
             "development": {
               "tsConfig": "projects/ngx-parody-api/tsconfig.lib.json"
+            },
+            "webWorkerTsConfig": {
+              "tsConfig": "tsconfig.worker.json"
             }
           },
           "defaultConfiguration": "production"
@@ -33,8 +36,7 @@
               "zone.js/testing"
             ],
             "browsers": "ChromeHeadlessCI",
-            "karmaConfig": "karma.conf.js",
-            "webWorkerTsConfig": "tsconfig.worker.json"
+            "karmaConfig": "karma.conf.js"
           }
         }
       }
