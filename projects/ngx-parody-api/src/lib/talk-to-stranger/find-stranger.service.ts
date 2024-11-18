@@ -34,6 +34,7 @@ export class FindStrangerService {
   }
 
   async searchStranger(opts: SearchStrangerOptions): Promise<NostrPublicUser> {
+    await this.createSession();
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
 
     if (wannaChat) {

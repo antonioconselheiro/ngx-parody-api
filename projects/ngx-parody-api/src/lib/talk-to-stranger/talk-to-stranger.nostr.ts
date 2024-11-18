@@ -5,6 +5,7 @@ import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { NostrEventFactory } from './nostr-event.factory';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
+import { FindStrangerService } from './find-stranger.service';
 
 /**
  * Talk to stranger service omegle feature for nostr
@@ -16,6 +17,7 @@ export class TalkToStrangerNostr {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
+    private findStrangerService: FindStrangerService,
     private talkToStrangerSigner: TalkToStrangerSigner,
     private npool: NostrPool
   ) { }
@@ -46,12 +48,20 @@ export class TalkToStrangerNostr {
   }
 
   listenStrangerStatus(stranger: NostrPublicUser): Observable<NostrEvent> {
-    return this.npool.observe([
+    const observable = this.npool.observe([
       {
         kinds: [ kinds.UserStatuses ],
         authors: [ stranger.pubkey ]
       }
     ]);
+
+    observable.subscribe(event => {
+      if (event.content === 'disconnected') {
+        this.findStrangerService.endSession();
+      }
+    });
+
+    return observable;
   }
 
   listenCurrenOnlineUsers(): Observable<number> {
