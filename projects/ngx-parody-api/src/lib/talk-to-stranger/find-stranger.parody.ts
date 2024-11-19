@@ -17,7 +17,7 @@ import { SearchStrangerOptions } from "./search-stranger-options.interface";
 @Injectable({
   providedIn: 'root'
 })
-export class FindStrangerService {
+export class FindStrangerParody {
 
   constructor(
     private nostrEventFactory: NostrEventFactory,

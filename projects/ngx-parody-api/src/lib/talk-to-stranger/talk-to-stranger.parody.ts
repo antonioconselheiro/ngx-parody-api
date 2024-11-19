@@ -5,19 +5,19 @@ import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { NostrEventFactory } from './nostr-event.factory';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
-import { FindStrangerService } from './find-stranger.service';
+import { FindStrangerParody } from './find-stranger.parody';
 
 /**
  * Talk to stranger service omegle feature for nostr
  */
 @Injectable()
-export class TalkToStrangerNostr {
+export class TalkToStrangerParody {
 
   readonly updateUserCountTimeout = 1000 * 60 * 5;
 
   constructor(
     private nostrEventFactory: NostrEventFactory,
-    private findStrangerService: FindStrangerService,
+    private findStrangerService: FindStrangerParody,
     private talkToStrangerSigner: TalkToStrangerSigner,
     private npool: NostrPool
   ) { }

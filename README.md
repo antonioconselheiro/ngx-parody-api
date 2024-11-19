@@ -104,6 +104,7 @@ In the example, the `OmegleNPoolOpts` service is the implementation of [NPoolOpt
 export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 
   constructor(
+    //  in this example this is a custom service in the application that centralize user custom relay configs
     private relayConfigService: RelayConfigService
   ) { }
   
@@ -142,13 +143,13 @@ export class SearchStrangerComponent {
   // [...]
 
   constructor(
-    private findStrangerService: FindStrangerService
+    private findStrangerParody: FindStrangerParody
   ) { }
 
   // [...]
 
   onClickSearchStranger(): void {
-    const stranger = await this.findStrangerService
+    const stranger = await this.findStrangerParody
       .searchStranger({
         signal: this.controller,
         searchTags: [ 'omegle' ], // will search for users with wannachat status indexed with #omegle
@@ -182,19 +183,17 @@ export class ChatingComponent implements OnDestroy, OnInit {
   typingTimeoutId = 0;
 
   // [...]
-
   constructor(
-    private talkToStrangerNostr: TalkToStrangerNostr
+    private talkToStrangerParody: TalkToStrangerParody
   ) { }
-
   // [...]
 
   ngOnInit(): void {
-    this.subscriptions.add(this.talkToStrangerNostr
+    this.subscriptions.add(this.talkToStrangerParody
       .listenMessages(stranger)
       .subscribe({
         next: event => {
-          this.talkToStrangerNostr
+          this.talkToStrangerParody
             .openEncryptedDirectMessage(stranger, event)
             .then(content => {
               const { pubkey, created_at } = event;
@@ -203,10 +202,19 @@ export class ChatingComponent implements OnDestroy, OnInit {
         }
       }));
 
-    this.subscriptions.add(this.talkToStrangerNostr
+    this.subscriptions.add(this.talkToStrangerParody
       .listenStrangerStatus(stranger)
       .subscribe({
-        next: event => this.strangerIsTyping = event.content === 'typing'
+        next: event => {
+          this.strangerIsTyping = event.content === 'typing';
+
+          //  when stranger emits disconnect status, your session will
+          //  automatically emit disconnect status too, so call .endSession
+          //  is not needed, but keeps needed to clean component data
+          if (event.content === 'disconnect') {
+            this.cleanSession();
+          }
+        }
       }));
   }
 
@@ -214,28 +222,40 @@ export class ChatingComponent implements OnDestroy, OnInit {
     this.subscriptions.unsubscribe();
   }
 
-  // [...]
-
+  //  [...]
   //  send message to stranger
   async sendMessage(stranger: NostrPublicUser, message: string): Promise<void> {
-    const typingPromise = this.talkToStrangerNostr.isTyping();
-    const messagePromise = this.talkToStrangerNostr.sendMessage(stranger, message);
+    const typingPromise = this.talkToStrangerParody.isTyping();
+    const messagePromise = this.talkToStrangerParody.sendMessage(stranger, message);
     await Promise.all([typingPromise, messagePromise]);
   }
 
   //  update typing status, must be bind into keydown event of textarea
   onTyping(): void {
     if (!this.typingTimeoutId) {
-      this.talkToStrangerNostr.isTyping();
+      this.talkToStrangerParody.isTyping();
     }
 
     clearTimeout(this.typingTimeoutId);
     this.typingTimeoutId = Number(setTimeout(() => {
-      this.talkToStrangerNostr.stopTyping();
+      this.talkToStrangerParody.stopTyping();
       this.typingTimeoutId = 0;
     }, this.typingTimeoutAmount));
   }
 
+  cleanSession(): void {
+    this.subscriptions.unsubscribe();
+    this.subscriptions = new Subscription();
+    this.strangerIsTyping = false;
+    this.stranger = null;
+  }
+
+  //  this can be called if user wanna disconnect
+  endSession(): Promise<void> {
+    return this.findStrangerService
+      .endSession()
+      .then(() => this.cleanSession());
+  }
 }
 
 ```

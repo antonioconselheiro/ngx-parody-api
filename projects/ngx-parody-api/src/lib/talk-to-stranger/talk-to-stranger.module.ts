@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FindStrangerNostr } from './find-stranger.nostr';
-import { FindStrangerService } from './find-stranger.service';
-import { TalkToStrangerNostr } from './talk-to-stranger.nostr';
+import { FindStrangerParody } from './find-stranger.parody';
+import { TalkToStrangerParody } from './talk-to-stranger.parody';
 import { TalkToStrangerSession } from './talk-to-stranger.session';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
 import { NostrModule } from '../nostr/nostr.module';
@@ -15,9 +15,9 @@ import { TalkToStrangerConfig } from './talk-to-stranger.config';
   ],
   providers: [
     FindStrangerNostr,
-    FindStrangerService,
+    FindStrangerParody,
     TalkToStrangerSession,
-    TalkToStrangerNostr,
+    TalkToStrangerParody,
     TalkToStrangerSigner,
     TalkToStrangerConfig
   ]
