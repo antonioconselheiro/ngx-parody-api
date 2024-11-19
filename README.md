@@ -133,7 +133,7 @@ After you configure your app relays, to find a stranger you must inject the serv
 
 ```typescript
 // [...]
-export class ChatingComponent {
+export class SearchStrangerComponent {
 
   //  by executing controller.abort() the search for stranger will
   //  be stopped, this can be used to allow user cancel search request
@@ -166,14 +166,20 @@ export class ChatingComponent {
 
 ```
 
-### Listen status and messages
+### Status and messages
 
 ```typescript
 // [...]
-export class ChatingComponent {
+export class ChatingComponent implements OnDestroy, OnInit {
   
   subscriptions = new Subscription();
   strangerIsTyping = false;
+  stranger: NostrPublicUser | null = null;
+
+  messages: Array<{ pubkey: string, content: string, created_at: number }> = [];
+
+  readonly typingTimeoutAmount = 2_000;
+  typingTimeoutId = 0;
 
   // [...]
 
@@ -183,27 +189,52 @@ export class ChatingComponent {
 
   // [...]
 
-  onClick(): void {
-    subscriptions.add(this.talkToStrangerNostr
+  ngOnInit(): void {
+    this.subscriptions.add(this.talkToStrangerNostr
       .listenMessages(stranger)
       .subscribe({
         next: event => {
           this.talkToStrangerNostr
             .openEncryptedDirectMessage(stranger, event)
-            .then(text => {
-              //  text contains the message
+            .then(content => {
+              const { pubkey, created_at } = event;
+              this.messages.push({ pubkey, content, created_at });
             });
         }
       }));
 
-    subscriptions.add(this.talkToStrangerNostr
+    this.subscriptions.add(this.talkToStrangerNostr
       .listenStrangerStatus(stranger)
       .subscribe({
         next: event => this.strangerIsTyping = event.content === 'typing'
       }));
   }
 
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
   // [...]
+
+  //  send message to stranger
+  async sendMessage(stranger: NostrPublicUser, message: string): Promise<void> {
+    const typingPromise = this.talkToStrangerNostr.isTyping();
+    const messagePromise = this.talkToStrangerNostr.sendMessage(stranger, message);
+    await Promise.all([typingPromise, messagePromise]);
+  }
+
+  //  update typing status, must be bind into keydown event of textarea
+  onTyping(): void {
+    if (!this.typingTimeoutId) {
+      this.talkToStrangerNostr.isTyping();
+    }
+
+    clearTimeout(this.typingTimeoutId);
+    this.typingTimeoutId = Number(setTimeout(() => {
+      this.talkToStrangerNostr.stopTyping();
+      this.typingTimeoutId = 0;
+    }, this.typingTimeoutAmount));
+  }
 
 }
 
