@@ -113,9 +113,9 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 
   async reqRouter(filters: NostrFilter[]): Promise<Map<string, NostrFilter[]>> {
     const toupleList: Array<[string, NostrFilter[]]> = [];
-    this.relayConfigService.getConfig().forEach(relay => {
-      toupleList.push([relay, filters]);
-    });
+    this.relayConfigService
+      .getConfig()
+      .forEach(relay => toupleList.push([relay, filters]));
 
     return new Map(toupleList);
   }
@@ -128,3 +128,83 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 
 `RelayConfigService` is a custom service from `omeglestr` that read user choosen relay, you can copy this approuch from `omeglestr`, can set the relays hardcoded or can create a custom service.
 
+### Find Stranger
+After you configure your app relays, to find a stranger you must inject the service FindStrangerService as the example below:
+
+```typescript
+// [...]
+export class ChatingComponent {
+
+  //  by executing controller.abort() the search for stranger will
+  //  be stopped, this can be used to allow user cancel search request
+  controller = new AbortController();
+
+  // [...]
+
+  constructor(
+    private findStrangerService: FindStrangerService
+  ) { }
+
+  // [...]
+
+  onClickSearchStranger(): void {
+    const stranger = await this.findStrangerService
+      .searchStranger({
+        signal: this.controller,
+        searchTags: [ 'omegle' ], // will search for users with wannachat status indexed with #omegle
+        userTags: [ 'omegle' ] // will include in your wannachat status a tag #omegle to index it to searching strangers
+      });
+  }
+
+  abortSearchStranger(): void {
+    this.controller.abort();
+  }
+
+  // [...]
+
+}
+
+```
+
+### Listen status and messages
+
+```typescript
+// [...]
+export class ChatingComponent {
+  
+  subscriptions = new Subscription();
+  strangerIsTyping = false;
+
+  // [...]
+
+  constructor(
+    private talkToStrangerNostr: TalkToStrangerNostr
+  ) { }
+
+  // [...]
+
+  onClick(): void {
+    subscriptions.add(this.talkToStrangerNostr
+      .listenMessages(stranger)
+      .subscribe({
+        next: event => {
+          this.talkToStrangerNostr
+            .openEncryptedDirectMessage(stranger, event)
+            .then(text => {
+              //  text contains the message
+            });
+        }
+      }));
+
+    subscriptions.add(this.talkToStrangerNostr
+      .listenStrangerStatus(stranger)
+      .subscribe({
+        next: event => this.strangerIsTyping = event.content === 'typing'
+      }));
+  }
+
+  // [...]
+
+}
+
+```
