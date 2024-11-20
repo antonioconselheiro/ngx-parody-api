@@ -133,6 +133,8 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 After you configure your app relays, to find a stranger you must inject the service FindStrangerService as the example below:
 
 ```typescript
+import { FindStrangerParody } from '@belomonte/ngx-parody-api';
+
 // [...]
 export class SearchStrangerComponent {
 
@@ -170,6 +172,8 @@ export class SearchStrangerComponent {
 ### Status and messages
 
 ```typescript
+import { FindStrangerParody, NostrPublicUser, TalkToStrangerParody } from '@belomonte/ngx-parody-api';
+
 // [...]
 export class ChatingComponent implements OnDestroy, OnInit {
   
@@ -184,7 +188,8 @@ export class ChatingComponent implements OnDestroy, OnInit {
 
   // [...]
   constructor(
-    private talkToStrangerParody: TalkToStrangerParody
+    private talkToStrangerParody: TalkToStrangerParody,
+    private findStrangerParody: FindStrangerParody
   ) { }
   // [...]
 
@@ -252,7 +257,7 @@ export class ChatingComponent implements OnDestroy, OnInit {
 
   //  this can be called if user wanna disconnect
   endSession(): Promise<void> {
-    return this.findStrangerService
+    return this.findStrangerParody
       .endSession()
       .then(() => this.cleanSession());
   }
