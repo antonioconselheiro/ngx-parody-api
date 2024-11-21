@@ -1,0 +1,4 @@
+TODO:
+[ ] Documentar sobre escuta de contagem de usuários ativos disponíveis
+[ ] Documentar sobre serviços para coletar informações do usuário atual ativo
+[ ] Incluir comentários em cada um dos principais serviços disponibilizados pela biblioteca e então gerar uma documentação

@@ -5,10 +5,8 @@
 # Parody Api
 If you code using this lib you [automatically become a cypherpunk](https://cdn.nakamotoinstitute.org/docs/cypherpunk-manifesto.txt).
 
-**Not released yet**
-
 ## Features of each parody project
-![Parody family](./assets/parody-api.png)
+![Parody family](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/assets/parody-api.png)
 
 ## Parody Projects
 Parody projects are jokes in the form of fully functional clients nostr.
@@ -19,9 +17,6 @@ Parody projects are jokes in the form of fully functional clients nostr.
 I'm still going to tell a lot of jokes, all algorithms with nostr that allow these clients to perform their respective social network interactions will be centralized in this library.
 
 Many will say that it is just a work of plagiarism and that there is no joke. If you do not understand humor and do not want to acquire a joke, do not interfere with my business.
-
-## Release
-Not released yet
 
 ## Warning
 In release `1.x.x` this package will include `@belomonte/nostr-ngx` dependency, but `0.x.x` will be used while `@belomonte/nostr-ngx` is not released.
@@ -35,7 +30,7 @@ The packages `@belomonte/nostr-ngx`, `@belomonte/nostr-gui-ngx` and `@belomonte/
 |-------------|-------------|-------------|
 | @belomonte/nostr-ngx | Not released | Services to deal with nostr, it bring overridable taken decisions, allowing you override services to customize core behaviors  |
 | @belomonte/nostr-gui-ngx | Not released | Read-to-use components to allow user set his configs, choose profile and signer, but also publish note, chat |
-| @belomonte/ngx-parody-api | Not released | Classic social network features that require algorithms with a higher level of complexity to be established |
+| @belomonte/ngx-parody-api | Released | Classic social network features that require algorithms with a higher level of complexity to be established |
 
 ## Installing
 `npm install @belomonte/ngx-parody-api --save`
@@ -265,8 +260,3 @@ export class ChatingComponent implements OnDestroy, OnInit {
 }
 
 ```
-
-TODO:
-[ ] Documentar sobre escuta de contagem de usuários ativos disponíveis
-[ ] Documentar sobre serviços para coletar informações do usuário atual ativo
-[ ] Incluir comentários em cada um dos principais serviços disponibilizados pela biblioteca e então gerar uma documentação

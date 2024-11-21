@@ -23,13 +23,6 @@ export class TalkToStrangerParody {
   ) { }
 
   /**
-   * method will clean the current session and generate a new pub
-   */
-  recreateSession(): NostrPublicUser {
-    return this.talkToStrangerSigner.recreateSession();
-  }
-
-  /**
    * current session pubkey 
    */
   getPublicKey(): Promise<string> {
@@ -41,6 +34,13 @@ export class TalkToStrangerParody {
    */
   async getPublicUser(): Promise<NostrPublicUser> {
     return this.talkToStrangerSigner.getPublicUser();
+  }
+
+  /**
+   * subscription that listen the current user pubkey and npub
+   */
+  listenCurrentUser(): Observable<NostrPublicUser> {
+    return this.talkToStrangerSigner.listenCurrentUser();
   }
 
   async openEncryptedDirectMessage(stranger: NostrPublicUser, event: NostrEvent): Promise<string> {
