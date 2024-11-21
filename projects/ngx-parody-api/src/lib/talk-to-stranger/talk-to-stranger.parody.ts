@@ -22,6 +22,27 @@ export class TalkToStrangerParody {
     private npool: NostrPool
   ) { }
 
+  /**
+   * method will clean the current session and generate a new pub
+   */
+  recreateSession(): NostrPublicUser {
+    return this.talkToStrangerSigner.recreateSession();
+  }
+
+  /**
+   * current session pubkey 
+   */
+  getPublicKey(): Promise<string> {
+    return this.talkToStrangerSigner.getPublicKey();
+  }
+
+  /**
+   * current session pubkey and npub 
+   */
+  async getPublicUser(): Promise<NostrPublicUser> {
+    return this.talkToStrangerSigner.getPublicUser();
+  }
+
   async openEncryptedDirectMessage(stranger: NostrPublicUser, event: NostrEvent): Promise<string> {
     return this.talkToStrangerSigner.nip04.decrypt(stranger.pubkey, event.content);
   }

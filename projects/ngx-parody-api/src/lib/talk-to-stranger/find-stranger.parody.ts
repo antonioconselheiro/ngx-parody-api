@@ -34,7 +34,7 @@ export class FindStrangerParody {
   }
 
   async searchStranger(opts: SearchStrangerOptions): Promise<NostrPublicUser> {
-    await this.createSession();
+    this.createSession();
     const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
 
     if (wannaChat) {
@@ -91,7 +91,7 @@ export class FindStrangerParody {
     });
   }
 
-  async replyChatInvitation(event: NostrEvent, opts: SearchStrangerOptions): Promise<NostrPublicUser | void> {
+  private async replyChatInvitation(event: NostrEvent, opts: SearchStrangerOptions): Promise<NostrPublicUser | void> {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'event was listen: ', event);
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
@@ -141,7 +141,12 @@ export class FindStrangerParody {
     });
   }
 
-  private async receiveChatingConfirmation(sub: Subscription, status: NostrEvent, strangerWannachatEvent: NostrEvent, opts: SearchStrangerOptions): Promise<boolean | undefined> {
+  private async receiveChatingConfirmation(
+    sub: Subscription,
+    status: NostrEvent,
+    strangerWannachatEvent: NostrEvent,
+    opts: SearchStrangerOptions
+  ): Promise<boolean | undefined> {
     const statusName = opts.statusName || 'wannachat';
     if (status.id === strangerWannachatEvent.id && status.content === statusName) {
       console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');
@@ -185,8 +190,8 @@ export class FindStrangerParody {
     await this.npool.event(deleteStatus);
   }
 
-  async createSession(): Promise<NostrPublicUser> {
-    const session = await this.talkToStrangerSigner.recreateSession();
+  createSession(): NostrPublicUser {
+    const session = this.talkToStrangerSigner.recreateSession();
     this.talkToStrangerSession.saveInList(session.pubkey);
     console.info(new Date().toLocaleString(), 'me: ', session.pubkey);
     return session;

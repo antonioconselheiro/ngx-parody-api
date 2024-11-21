@@ -244,10 +244,11 @@ export class ChatingComponent implements OnDestroy, OnInit {
     clearTimeout(this.typingTimeoutId);
     this.typingTimeoutId = Number(setTimeout(() => {
       this.talkToStrangerParody.stopTyping();
-      this.typingTimeoutId = 0;
+      this.qtypingTimeoutId = 0;
     }, this.typingTimeoutAmount));
   }
 
+  //  clean component data when user or partner disconnect
   cleanSession(): void {
     this.subscriptions.unsubscribe();
     this.subscriptions = new Subscription();
@@ -255,7 +256,7 @@ export class ChatingComponent implements OnDestroy, OnInit {
     this.stranger = null;
   }
 
-  //  this can be called if user wanna disconnect
+  //  called that when user wanna disconnect
   endSession(): Promise<void> {
     return this.findStrangerParody
       .endSession()
@@ -264,3 +265,8 @@ export class ChatingComponent implements OnDestroy, OnInit {
 }
 
 ```
+
+TODO:
+[ ] Documentar sobre escuta de contagem de usuários ativos disponíveis
+[ ] Documentar sobre serviços para coletar informações do usuário atual ativo
+[ ] Incluir comentários em cada um dos principais serviços disponibilizados pela biblioteca e então gerar uma documentação
