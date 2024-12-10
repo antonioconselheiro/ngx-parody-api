@@ -62,7 +62,7 @@ export class FindStrangerNostr {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ status, ...opts.searchTags ],
+        '#t': [ status ],
         since: currentTimeInSeconds - timeInSeconds
       }
     ];
@@ -70,7 +70,7 @@ export class FindStrangerNostr {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'quering filter: ', filters);
     let wannachats = await this.npool.query(filters, opts);
 
-    wannachats = wannachats.filter(wannachat => !this.talkToStrangerSession.isInList(wannachat.pubkey));
+    wannachats = wannachats.filter(wannachat => this.ignoreEventFilter(wannachat, opts.searchTags));
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
@@ -80,5 +80,16 @@ export class FindStrangerNostr {
     }
 
     return Promise.resolve(wannachat || null);
+  }
+
+  private ignoreEventFilter(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
+    if (this.talkToStrangerSession.isInList(wannachatEvent.pubkey)) {
+      return false;
+    }
+
+    return wannachatEvent.tags
+      .filter(([tagType]) => tagType === 't')
+      .map(([,value]) => value)
+      .every(tag => searchTags.includes(tag))
   }
 }
