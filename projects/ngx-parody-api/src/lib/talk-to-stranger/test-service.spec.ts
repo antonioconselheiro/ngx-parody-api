@@ -1,7 +1,56 @@
-import { NostrEvent, NostrFilter } from "@nostrify/nostrify";
+import { getTestBed, TestBed } from "@angular/core/testing";
+import { NostrEvent, NostrFilter, NPoolOpts, NRelay1 } from "@nostrify/nostrify";
 import { matchFilters } from "nostr-tools";
+import { FindStrangerNostr } from "./find-stranger.nostr";
+import { TalkToStrangerModule } from "./talk-to-stranger.module";
+import {
+  BrowserDynamicTestingModule,
+  platformBrowserDynamicTesting
+} from "@angular/platform-browser-dynamic/testing";
+import { Injectable } from "@angular/core";
+import { POOL_OPTIONS_TOKEN } from "../injection-token/npool-options.token";
+
+interface FindStrangerNostrSpec {
+  validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean;
+}
+
+@Injectable()
+export class MockNPoolOpts implements NPoolOpts<NRelay1> {
+  
+  open(url: string): NRelay1 {
+    return new NRelay1(url);
+  }
+
+  async reqRouter(filters: NostrFilter[]): Promise<Map<string, NostrFilter[]>> {
+    return new Map([[ 'ws://localhost:7777/', filters ]]);
+  }
+
+  async eventRouter(): Promise<string[]> {
+    return [ 'ws://localhost:7777/' ];
+  }
+}
 
 describe('Testing filter', () => {
+
+  let service: FindStrangerNostrSpec;
+  beforeAll(() => {
+    getTestBed().initTestEnvironment(BrowserDynamicTestingModule, platformBrowserDynamicTesting())
+  });
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [
+        TalkToStrangerModule
+      ],
+      providers: [
+        {
+          provide: POOL_OPTIONS_TOKEN,
+          useClass: MockNPoolOpts
+        }
+      ]
+    }).compileComponents();
+    service = TestBed.inject(FindStrangerNostr) as any as FindStrangerNostrSpec;
+  });
   
   it('event should match', () => {
     const event: NostrEvent = {
@@ -34,5 +83,41 @@ describe('Testing filter', () => {
     ];
 
     expect(matchFilters(filters, event)).toBeTruthy();
+  });
+
+  it('filter service is available', () => {
+    expect(service).toBeTruthy();
+  });
+
+  it('filter accept event', () => {
+    const event: any = {
+      content: "wannachat",
+      kind: 30315,
+      tags: [
+        ['d', 'general'],
+        ['p', 'a1cf7669ece0bc3fdad393102e87c4f073ae85dfced43ca08b37d86728e25510'],
+        ['t', 'wannachat'],
+        ['t', 'omegle']
+      ]
+    };
+
+    expect(service.validateEvent(event, [ 'omegle' ])).toBeTruthy();
+    expect(service.validateEvent(event, [ 'omegle', 'wannachat' ])).toBeTruthy();
+  });
+
+  it('filter reject event', () => {
+    const event: any = {
+      content: "wannachat",
+      kind: 30315,
+      tags: [
+        ['d', 'general'],
+        ['p', 'a1cf7669ece0bc3fdad393102e87c4f073ae85dfced43ca08b37d86728e25510'],
+        ['t', 'wannachat'],
+        ['t', 'omegle']
+      ]
+    };
+
+    expect(service.validateEvent(event, [ 'omegle', 'brazil' ])).toBeFalsy();
+    expect(service.validateEvent(event, [ 'brazil' ])).toBeFalsy();
   });
 });

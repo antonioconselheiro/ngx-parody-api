@@ -70,7 +70,7 @@ export class FindStrangerNostr {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'quering filter: ', filters);
     let wannachats = await this.npool.query(filters, opts);
 
-    wannachats = wannachats.filter(wannachat => this.ignoreEventFilter(wannachat, opts.searchTags));
+    wannachats = wannachats.filter(wannachat => this.validateEvent(wannachat, opts.searchTags));
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
@@ -82,14 +82,26 @@ export class FindStrangerNostr {
     return Promise.resolve(wannachat || null);
   }
 
-  private ignoreEventFilter(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
-    if (this.talkToStrangerSession.isInList(wannachatEvent.pubkey)) {
+  private validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
+    const eventIsInIgnoreList = this.talkToStrangerSession.isInList(wannachatEvent.pubkey);
+    if (eventIsInIgnoreList) {
       return false;
     }
 
-    return wannachatEvent.tags
-      .filter(([tagType]) => tagType === 't')
-      .map(([,value]) => value)
-      .every(tag => searchTags.includes(tag))
+    if (searchTags.length) {
+      //  FIXME: será que eu não deveria centralizar está lógica no tags helper do nostr-ngx? getHashtags(event): Array<string>
+      const eventTags = wannachatEvent.tags
+        .filter(([tagType]) => tagType === 't')
+        .map(([,value]) => value);
+
+      const hasAll = searchTags
+        .every(tag => eventTags.includes(tag));
+
+      if (!hasAll) {
+        return false;
+      }
+    }
+
+    return true;
   }
 }
