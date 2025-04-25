@@ -1,8 +1,15 @@
 {
   "name": "@belomonte/ngx-parody-api",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": "António Conselheiro",
   "license": "Ungovernable",
+  "keywords": [
+    "angular", "typescript", "nostr"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antonioconselheiro/ngx-parody-api.git"
+  },
   "peerDependencies": {
     "@angular/common": "^18.2.0",
     "@angular/core": "^18.2.0",

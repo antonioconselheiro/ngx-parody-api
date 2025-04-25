@@ -1,6 +1,6 @@
 FROM node:20
 
-RUN npm install typescript @angular/cli sass sassdoc -g
+RUN npm install typescript @angular/cli sass sassdoc jsr -g
 RUN yes | npx jsr
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -

@@ -70,21 +70,25 @@ export class FindStrangerParody {
         )
         .subscribe({
           next: event => {
-            this.talkToStrangerSession.saveInList(event.pubkey);
-            this.replyChatInvitation(event, opts)
-              .then(user => {
-                if (!user) {
-                  throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
-                }
+            const isValid = this.findStrangerNostr.validateEvent(event, opts.searchTags);
 
-                resolve(user)
-              })
-              .catch(e => {
-                console.error(e);
-                throw e;
-              });
-
-            sub.unsubscribe();
+            if (isValid) {
+              this.talkToStrangerSession.saveInList(event.pubkey);
+              this.replyChatInvitation(event, opts)
+                .then(user => {
+                  if (!user) {
+                    throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
+                  }
+  
+                  resolve(user)
+                })
+                .catch(e => {
+                  console.error(e);
+                  throw e;
+                });
+  
+              sub.unsubscribe();
+            }
           },
           error: err => console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']',err)
         });
@@ -99,6 +103,10 @@ export class FindStrangerParody {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'replied... resolving... ');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[searchStranger] unsubscribe');
     return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
+  }
+
+  private async rejectChatInvitation(event: NostrEvent): Promise<void> {
+
   }
 
   private isChatingToPubKey(event: NostrEvent, me: NostrPublicUser): boolean {

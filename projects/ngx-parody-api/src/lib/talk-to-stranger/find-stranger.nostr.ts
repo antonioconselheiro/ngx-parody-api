@@ -3,9 +3,9 @@ import { NostrEvent } from '@nostrify/nostrify';
 import { kinds } from 'nostr-tools';
 import { Observable } from 'rxjs';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
-import { TalkToStrangerSession } from './talk-to-stranger.session';
 import { NostrPool } from '../nostr/nostr.pool';
 import { SearchStrangerOptions } from './search-stranger-options.interface';
+import { TalkToStrangerSession } from './talk-to-stranger.session';
 
 @Injectable()
 export class FindStrangerNostr {
@@ -62,7 +62,7 @@ export class FindStrangerNostr {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ status ],
+        '#t': [ status ].concat(opts.searchTags),
         since: currentTimeInSeconds - timeInSeconds
       }
     ];
@@ -74,15 +74,15 @@ export class FindStrangerNostr {
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','wanna chat found:', wannachat);
+      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat found:', wannachat);
     } else {
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','wanna chat NOT found...');
+      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat NOT found...');
     }
 
     return Promise.resolve(wannachat || null);
   }
 
-  private validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
+  validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
     const eventIsInIgnoreList = this.talkToStrangerSession.isInList(wannachatEvent.pubkey);
     if (eventIsInIgnoreList) {
       return false;
