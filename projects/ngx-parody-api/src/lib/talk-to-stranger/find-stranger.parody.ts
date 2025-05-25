@@ -5,7 +5,7 @@ import { NostrEventFactory } from "./nostr-event.factory";
 import { NostrPool } from "../nostr/nostr.pool";
 import { FindStrangerNostr } from "./find-stranger.nostr";
 import { TalkToStrangerConfig } from "./talk-to-stranger.config";
-import { TalkToStrangerSession } from "./talk-to-stranger.session";
+import { IgnoreListService } from "./ignore-list.service";
 import { TalkToStrangerSigner } from "./talk-to-stranger.signer";
 import { NostrPublicUser } from "../domain/nostr-public-user.interface";
 import { NostrConverter } from "../nostr/nostr.converter";
@@ -22,7 +22,7 @@ export class FindStrangerParody {
   constructor(
     private nostrEventFactory: NostrEventFactory,
     private findStrangerNostr: FindStrangerNostr,
-    private talkToStrangerSession: TalkToStrangerSession,
+    private talkToStrangerSession: IgnoreListService,
     private talkToStrangerSigner: TalkToStrangerSigner,
     private nostrConverter: NostrConverter,
     private config: TalkToStrangerConfig,
@@ -42,12 +42,16 @@ export class FindStrangerParody {
       const listening = this.listenChatingConfirmation(wannaChat, opts);
       await this.inviteToChating(wannaChat, opts);
       const isChatingConfirmation = await listening;
-      this.talkToStrangerSession.saveInList(wannaChat.pubkey);
+      this.talkToStrangerSession.saveInIgnoreList(wannaChat.pubkey);
 
       if (isChatingConfirmation) {
         return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
       } else {
         await this.endSession();
+        if (opts.signal && opts.signal.aborted) {
+          return Promise.reject(opts.signal);
+        }
+
         return this.searchStranger(opts);
       }
     }
@@ -71,9 +75,8 @@ export class FindStrangerParody {
         .subscribe({
           next: event => {
             const isValid = this.findStrangerNostr.validateEvent(event, opts.searchTags);
-
             if (isValid) {
-              this.talkToStrangerSession.saveInList(event.pubkey);
+              this.talkToStrangerSession.saveInIgnoreList(event.pubkey);
               this.replyChatInvitation(event, opts)
                 .then(user => {
                   if (!user) {
@@ -103,10 +106,6 @@ export class FindStrangerParody {
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'replied... resolving... ');
     console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[searchStranger] unsubscribe');
     return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
-  }
-
-  private async rejectChatInvitation(event: NostrEvent): Promise<void> {
-
   }
 
   private isChatingToPubKey(event: NostrEvent, me: NostrPublicUser): boolean {
@@ -200,8 +199,8 @@ export class FindStrangerParody {
 
   createSession(): NostrPublicUser {
     const session = this.talkToStrangerSigner.recreateSession();
-    this.talkToStrangerSession.saveInList(session.pubkey);
-    console.info(new Date().toLocaleString(), 'me: ', session.pubkey);
+    this.talkToStrangerSession.saveInIgnoreList(session.pubkey);
+    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'me: ', session.pubkey);
     return session;
   }
 
