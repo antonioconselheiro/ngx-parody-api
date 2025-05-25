@@ -94,7 +94,7 @@ export class TalkToStrangerParody {
       }
 
       requestPending = true;
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'user count requested');
+      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'user count requested');
       this.npool.query([
         {
           kinds: [ kinds.UserStatuses ],
@@ -104,11 +104,11 @@ export class TalkToStrangerParody {
       ])
       .then(events => {
         const users = new Set<string>();
-        console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','count events', events);
+        console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','count events', events);
         events.forEach(event => users.add(event.pubkey));
         const count = [...users].length;
 
-        console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'active users counted: ', count);
+        console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'active users counted: ', count);
         subject.next(count);
         requestPending = false;
       })

@@ -17,7 +17,7 @@ export class NostrPool extends NPool<NRelay1> {
   }
 
   observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal }): Observable<NostrEvent> {
-    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','[[subscribe filter]]', filters);
+    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','[[subscribe filter]]', filters);
     const controller = new AbortController();
     const signal = opts?.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal;
     const subject = new Subject<NostrEvent>();
@@ -46,7 +46,7 @@ export class NostrPool extends NPool<NRelay1> {
       .asObservable()
       .pipe(
         finalize(() => {
-          console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[[unsubscribe filter]]', filters);
+          console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[[unsubscribe filter]]', filters);
           controller.abort();
         })
       );

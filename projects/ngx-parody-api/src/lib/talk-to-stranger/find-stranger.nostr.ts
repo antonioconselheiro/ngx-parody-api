@@ -23,7 +23,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'observing filter:', filters);
+    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
@@ -37,7 +37,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','quering filter:', filters);
+    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','quering filter:', filters);
     return this.npool.query(filters, opts);
   }
 
@@ -51,7 +51,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','observing filter:', filters);
+    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
@@ -68,16 +68,16 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'quering filter: ', filters);
+    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'quering filter: ', filters);
     let wannachats = await this.npool.query(filters, opts);
 
     wannachats = wannachats.filter(wannachat => this.validateEvent(wannachat, opts.searchTags));
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat found:', wannachat);
+      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat found:', wannachat);
     } else {
-      console.info(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat NOT found...');
+      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat NOT found...');
     }
 
     return Promise.resolve(wannachat || null);
