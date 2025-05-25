@@ -5,14 +5,14 @@ import { Observable } from 'rxjs';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { SearchStrangerOptions } from './search-stranger-options.interface';
-import { TalkToStrangerSession } from './talk-to-stranger.session';
+import { IgnoreListService } from './ignore-list.service';
 
 @Injectable()
 export class FindStrangerNostr {
 
   constructor(
     private npool: NostrPool,
-    private talkToStrangerSession: TalkToStrangerSession
+    private talkToStrangerSession: IgnoreListService
   ) { }
 
   listenUserStatusUpdate(pubkey: string, opts: { signal?: AbortSignal }): Observable<NostrEvent> {    
@@ -59,6 +59,7 @@ export class FindStrangerNostr {
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1_000);
     const timeInSeconds = (60 * 10);
     const status = opts.statusName || 'wannachat';
+
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
@@ -83,7 +84,7 @@ export class FindStrangerNostr {
   }
 
   validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
-    const eventIsInIgnoreList = this.talkToStrangerSession.isInList(wannachatEvent.pubkey);
+    const eventIsInIgnoreList = this.talkToStrangerSession.isInIgnoreList(wannachatEvent.pubkey);
     if (eventIsInIgnoreList) {
       return false;
     }

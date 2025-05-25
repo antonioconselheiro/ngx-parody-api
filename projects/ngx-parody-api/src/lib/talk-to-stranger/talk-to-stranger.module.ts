@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FindStrangerNostr } from './find-stranger.nostr';
 import { FindStrangerParody } from './find-stranger.parody';
 import { TalkToStrangerParody } from './talk-to-stranger.parody';
-import { TalkToStrangerSession } from './talk-to-stranger.session';
+import { IgnoreListService } from './ignore-list.service';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
 import { NostrModule } from '../nostr/nostr.module';
 import { TalkToStrangerConfig } from './talk-to-stranger.config';
@@ -16,7 +16,7 @@ import { TalkToStrangerConfig } from './talk-to-stranger.config';
   providers: [
     FindStrangerNostr,
     FindStrangerParody,
-    TalkToStrangerSession,
+    IgnoreListService,
     TalkToStrangerParody,
     TalkToStrangerSigner,
     TalkToStrangerConfig

@@ -6,5 +6,5 @@ import { Injectable } from '@angular/core';
 @Injectable()
 export class TalkToStrangerConfig {
 
-  readonly wannachatStatusDefaultTimeoutInSeconds = 20;
+  readonly wannachatStatusDefaultTimeoutInSeconds = 5;
 }
