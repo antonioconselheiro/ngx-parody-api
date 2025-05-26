@@ -132,7 +132,7 @@ export class FindStrangerParody {
         .listenUserStatusUpdate(strangerWannachatEvent.pubkey, opts)
         .pipe(
           timeout(5000),
-          catchError(err => throwError(() => new Error('chat confirmation timeout after 5s waiting, there is no stranger connected to this session', { cause: err })))
+          catchError(err => throwError(() => err))
         )
         .subscribe({
           next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent, opts).then(is => {
@@ -154,6 +154,10 @@ export class FindStrangerParody {
     strangerWannachatEvent: NostrEvent,
     opts: SearchStrangerOptions
   ): Promise<boolean | undefined> {
+    if (sub.closed) {
+      return Promise.resolve(void(0));
+    }
+
     const statusName = opts.statusName || 'wannachat';
     if (status.id === strangerWannachatEvent.id && status.content === statusName) {
       console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'stranger #wannachat status was listen, ignoring and waiting new status...');

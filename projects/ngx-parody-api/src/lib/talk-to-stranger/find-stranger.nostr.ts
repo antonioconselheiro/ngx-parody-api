@@ -31,7 +31,7 @@ export class FindStrangerNostr {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ 'confirm', ...opts.searchTags ],
+        '#t': [ 'confirm' ],
         '#p': [ user.pubkey ],
         limit: 1
       }
@@ -45,7 +45,7 @@ export class FindStrangerNostr {
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ 'confirm', ...opts.searchTags ],
+        '#t': [ 'confirm' ],
         '#p': [ user.pubkey ],
         limit: 1
       }
@@ -55,15 +55,26 @@ export class FindStrangerNostr {
     return this.npool.observe(filters, opts);
   }
 
+  private generateSearchUserTags(opts: SearchStrangerOptions): Array<string> {
+    return [
+      //  filter match considering my criteria
+      ...opts.searchTags.map(tag => `user_${tag}`),
+      
+      //  filter match considering others criteria
+      ...opts.userTags.map(tag => `search_${tag}`)
+    ];
+  }
+
   async queryChatAvailable(opts: SearchStrangerOptions): Promise<NostrEvent | null> {
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1_000);
     const timeInSeconds = (60 * 10);
     const status = opts.statusName || 'wannachat';
+    const searchTags = this.generateSearchUserTags(opts);
 
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ status ].concat(opts.searchTags),
+        '#t': [ status ].concat(searchTags),
         since: currentTimeInSeconds - timeInSeconds
       }
     ];

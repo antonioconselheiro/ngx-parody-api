@@ -85,14 +85,21 @@ export class NostrEventFactory {
     ]);
   }
 
+  private generateRegisterUserTags(opts: SearchStrangerOptions): Array<string[]> {
+    return [
+      ...opts.userTags.map(tag => ['t', `user_${tag}`]),
+      ...opts.searchTags.map(tag => ['t', `search_${tag}`])
+    ];
+  }
+
   createChatingUserStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const useTags = opts.userTags.map(tag => ['t', tag]);
+    const tags = this.generateRegisterUserTags(opts);
 
     return this.createUserStatus('confirm', [
       [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
       [ 'p', stranger.pubkey ],
       [ 't', 'confirm' ],
-      ...useTags
+      ...tags
     ]);
   }
 

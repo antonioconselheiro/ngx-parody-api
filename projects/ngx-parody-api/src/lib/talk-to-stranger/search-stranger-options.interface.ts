@@ -16,13 +16,13 @@ export interface SearchStrangerOptions {
 
   /**
    * The algorithm will require the event status have these configured tags.
-   * Omeglestr uses ["omegle"] to find omegle users.
+   * Omeglestr uses "omegle" to find omegle users.
    */
   searchTags: Array<string>;
 
   /**
    * Will publish user status with these configured tags.
-   * In omeglestr is configured as ["omegle"] to be available for omegle strangers.
+   * In omeglestr is configured as "omegle" to be available for omegle strangers.
    */
   userTags: Array<string>;
 }
