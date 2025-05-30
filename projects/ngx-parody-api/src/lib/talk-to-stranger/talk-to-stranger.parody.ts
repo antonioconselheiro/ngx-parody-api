@@ -6,6 +6,7 @@ import { NostrPool } from '../nostr/nostr.pool';
 import { NostrEventFactory } from './nostr-event.factory';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
 import { FindStrangerParody } from './find-stranger.parody';
+import { debuglog } from '../log/debuglog.fn';
 
 /**
  * Talk to stranger service omegle feature for nostr
@@ -54,9 +55,9 @@ export class TalkToStrangerParody {
       .then(pubkey => {
         this.npool.observe([
           {
-            kinds: [ kinds.EncryptedDirectMessage ],
-            authors: [ stranger.pubkey ],
-            '#p': [ pubkey ]
+            kinds: [kinds.EncryptedDirectMessage],
+            authors: [stranger.pubkey],
+            '#p': [pubkey]
           }
         ]).subscribe({
           next: event => subject.next(event),
@@ -71,8 +72,8 @@ export class TalkToStrangerParody {
   listenStrangerStatus(stranger: NostrPublicUser): Observable<NostrEvent> {
     const observable = this.npool.observe([
       {
-        kinds: [ kinds.UserStatuses ],
-        authors: [ stranger.pubkey ]
+        kinds: [kinds.UserStatuses],
+        authors: [stranger.pubkey]
       }
     ]);
 
@@ -85,7 +86,7 @@ export class TalkToStrangerParody {
     return observable;
   }
 
-  listenCurrenOnlineUsers(): Observable<number> {
+  listenCurrenOnlineUsers(filterTags: string[] = ['omegle']): Observable<number> {
     const subject = new Subject<number>();
     let requestPending = false;
     const closure = () => {
@@ -94,29 +95,29 @@ export class TalkToStrangerParody {
       }
 
       requestPending = true;
-      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'user count requested');
-      this.npool.query([
-        {
-          kinds: [ kinds.UserStatuses ],
-          '#t': [ 'omegle' ],
-          since: Math.floor(Date.now() / 1000) - (24 * 60 * 60)
-        }
-      ])
-      .then(events => {
-        const users = new Set<string>();
-        console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','count events', events);
-        events.forEach(event => users.add(event.pubkey));
-        const count = [...users].length;
+      const filter = {
+        kinds: [kinds.UserStatuses],
+        '#t': filterTags,
+        since: Math.floor(Date.now() / 1000) - (24 * 60 * 60)
+      };
 
-        console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'active users counted: ', count);
-        subject.next(count);
-        requestPending = false;
-      })
-      .catch(e => {
-        console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','user count lauched error', e);
-        requestPending = false;
-        clearInterval(id);
-      });
+      debuglog('user count requested using filter: ', filter);
+      this.npool.query([filter])
+        .then(events => {
+          const users = new Set<string>();
+          debuglog('count events', events);
+          events.forEach(event => users.add(event.pubkey));
+          const count = [...users].length;
+
+          debuglog('active users counted: ', count);
+          subject.next(count);
+          requestPending = false;
+        })
+        .catch(e => {
+          console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'user count lauched error', e);
+          requestPending = false;
+          clearInterval(id);
+        });
     };
 
     const id = setInterval(closure, this.updateUserCountTimeout);

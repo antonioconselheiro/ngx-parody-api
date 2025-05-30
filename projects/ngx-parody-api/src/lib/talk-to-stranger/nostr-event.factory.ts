@@ -49,8 +49,8 @@ export class NostrEventFactory {
       // eslint-disable-next-line @typescript-eslint/naming-convention
       created_at: this.unixTimeNow(),
       tags: [
-        [ 'p', stranger.pubkey],
-        [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
+        ['p', stranger.pubkey],
+        ['expiration', this.getExpirationTimestamp(this.largeExpirationTime)]
       ]
     };
 
@@ -63,43 +63,39 @@ export class NostrEventFactory {
    */
   createWannaChatUserStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
     const expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
-    const statusName = opts.statusName || 'wannachat';
-    const useTags = opts.userTags.map(tag => ['t', tag]);
+    const tags = this.generateRegisterUserTags(opts);
 
-    return this.createUserStatus(statusName, [
-        [ 'expiration', this.getExpirationTimestamp(expireIn) ],
-        [ 't', statusName ],
-        ...useTags
-      ]);
+    return this.createUserStatus('wannachat', [
+      ['expiration', this.getExpirationTimestamp(expireIn)],
+      ...tags
+    ]);
   }
 
   createDisconnectedUserStatus(): Promise<NostrEvent> {
     return this.createUserStatus('disconnected', [
-      [ 'expiration', this.getExpirationTimestamp() ]
+      ['expiration', this.getExpirationTimestamp()]
     ]);
   }
 
   createTypingUserStatus(): Promise<NostrEvent> {
     return this.createUserStatus('typing', [
-      [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
+      ['expiration', this.getExpirationTimestamp(this.largeExpirationTime)]
     ]);
   }
 
   private generateRegisterUserTags(opts: SearchStrangerOptions): Array<string[]> {
     return [
-      ...opts.userTags.map(tag => ['t', `user_${tag}`]),
-      ...opts.searchTags.map(tag => ['t', `search_${tag}`])
+      ['t', `${opts.userIs}_wannachat_${opts.searchFor}`]
     ];
   }
 
   createChatingUserStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const tags = this.generateRegisterUserTags(opts);
-
+    const myTag = this.generateRegisterUserTags(opts);
     return this.createUserStatus('confirm', [
-      [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ],
-      [ 'p', stranger.pubkey ],
-      [ 't', 'confirm' ],
-      ...tags
+      ['expiration', this.getExpirationTimestamp(this.largeExpirationTime)],
+      ['p', stranger.pubkey],
+      ['t', 'confirm'],
+      ...myTag
     ]);
   }
 
@@ -107,9 +103,9 @@ export class NostrEventFactory {
     const template: EventTemplate = {
       kind: kinds.EventDeletion,
       tags: [
-        [ 'k', String(kinds.EncryptedDirectMessage) ],
-        [ 'k', String(kinds.UserStatuses) ],
-        [ 'expiration', this.getExpirationTimestamp() ]
+        ['k', String(kinds.EncryptedDirectMessage)],
+        ['k', String(kinds.UserStatuses)],
+        ['expiration', this.getExpirationTimestamp()]
       ],
       created_at: Math.floor(new Date().getTime() / 1000),
       content: ''
@@ -120,14 +116,14 @@ export class NostrEventFactory {
 
   cleanUserStatus(): Promise<NostrEvent> {
     return this.createUserStatus('', [
-      [ 'expiration', this.getExpirationTimestamp(this.largeExpirationTime) ]
+      ['expiration', this.getExpirationTimestamp(this.largeExpirationTime)]
     ]);
   }
 
-  private async createUserStatus(status: string, customTags?: string[][]): Promise<NostrEvent> {
+  private async createUserStatus(status: string, custom?: string[][]): Promise<NostrEvent> {
     const tags = [
       ['d', 'general'],
-      ...(customTags || [])
+      ...(custom || [])
     ];
 
     let eventTemplate: EventTemplate = {

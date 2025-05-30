@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { NostrEvent, NostrFilter, NPool, NPoolOpts, NRelay1 } from '@nostrify/nostrify';
 import { finalize, Observable, Subject } from 'rxjs';
 import { POOL_OPTIONS_TOKEN } from '../injection-token/npool-options.token';
+import { debuglog } from '../log/debuglog.fn';
 
 /**
  * when nostr-ngx get launched this class will be deprecated and
@@ -17,7 +18,7 @@ export class NostrPool extends NPool<NRelay1> {
   }
 
   observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal }): Observable<NostrEvent> {
-    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','[[subscribe filter]]', filters);
+    debuglog('[[subscribe filter]]', filters);
     const controller = new AbortController();
     const signal = opts?.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal;
     const subject = new Subject<NostrEvent>();
@@ -35,8 +36,8 @@ export class NostrPool extends NPool<NRelay1> {
           if (nsetSize !== nset.size) {
             subject.next(msg[2]);
           } else {
-            console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'event deduplicated, not emiting again: ', msg[2]);
-            console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'current nset from request: ', nset);
+            debuglog( 'event deduplicated, not emiting again: ', msg[2]);
+            debuglog( 'current nset from request: ', nset);
           }
         }
       }
@@ -46,7 +47,7 @@ export class NostrPool extends NPool<NRelay1> {
       .asObservable()
       .pipe(
         finalize(() => {
-          console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', '[[unsubscribe filter]]', filters);
+          debuglog( '[[unsubscribe filter]]', filters);
           controller.abort();
         })
       );

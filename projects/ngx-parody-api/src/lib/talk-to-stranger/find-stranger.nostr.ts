@@ -6,6 +6,7 @@ import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { SearchStrangerOptions } from './search-stranger-options.interface';
 import { IgnoreListService } from './ignore-list.service';
+import { debuglog } from '../log/debuglog.fn';
 
 @Injectable()
 export class FindStrangerNostr {
@@ -23,7 +24,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'observing filter:', filters);
+    debuglog('observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
@@ -37,7 +38,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','quering filter:', filters);
+    debuglog('quering filter:', filters);
     return this.npool.query(filters, opts);
   }
 
@@ -51,67 +52,65 @@ export class FindStrangerNostr {
       }
     ];
 
-    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']','observing filter:', filters);
+    debuglog('observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
-  private generateSearchUserTags(opts: SearchStrangerOptions): Array<string> {
-    return [
-      //  filter match considering my criteria
-      ...opts.searchTags.map(tag => `user_${tag}`),
-      
-      //  filter match considering others criteria
-      ...opts.userTags.map(tag => `search_${tag}`)
-    ];
+  private generateSearchUserTags(opts: SearchStrangerOptions): string {
+    return `${opts.searchFor}_wannachat_${opts.userIs}`;
   }
 
   async queryChatAvailable(opts: SearchStrangerOptions): Promise<NostrEvent | null> {
     const currentTimeInSeconds = Math.floor(new Date().getTime() / 1_000);
     const timeInSeconds = (60 * 10);
-    const status = opts.statusName || 'wannachat';
-    const searchTags = this.generateSearchUserTags(opts);
+    const searchTag = this.generateSearchUserTags(opts);
 
     const filters = [
       {
         kinds: [ kinds.UserStatuses ],
-        '#t': [ status ].concat(searchTags),
+        '#t': [searchTag],
         since: currentTimeInSeconds - timeInSeconds
       }
     ];
 
-    console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'quering filter: ', filters);
+    debuglog('quering filter: ', filters);
     let wannachats = await this.npool.query(filters, opts);
 
-    wannachats = wannachats.filter(wannachat => this.validateEvent(wannachat, opts.searchTags));
+    wannachats = wannachats.filter(wannachat => this.validateEvent(wannachat, opts));
+    debuglog('list of wannachat event loaded:', wannachats);
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
-      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat found:', wannachat);
+      debuglog('wannachat found:', wannachat);
     } else {
-      console.debug(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'wanna chat NOT found...');
+      debuglog('wannachat NOT found...');
     }
 
     return Promise.resolve(wannachat || null);
   }
 
-  validateEvent(wannachatEvent: NostrEvent, searchTags: Array<string>): boolean {
+  /**
+   * Garante que o evento identificado tenha todas as tags requeridas
+   * @returns 
+   */
+  validateEvent(wannachatEvent: NostrEvent, opts: SearchStrangerOptions): boolean {
     const eventIsInIgnoreList = this.talkToStrangerSession.isInIgnoreList(wannachatEvent.pubkey);
     if (eventIsInIgnoreList) {
       return false;
     }
 
-    if (searchTags.length) {
+    const searchTag = this.generateSearchUserTags(opts);
       //  FIXME: será que eu não deveria centralizar está lógica no tags helper do nostr-ngx? getHashtags(event): Array<string>
-      const eventTags = wannachatEvent.tags
-        .filter(([tagType]) => tagType === 't')
-        .map(([,value]) => value);
+    const eventTags = wannachatEvent.tags
+      .filter(([tagType]) => tagType === 't')
+      .map(([,value]) => value);
 
-      const hasAll = searchTags
-        .every(tag => eventTags.includes(tag));
+    debuglog('required tags', searchTag, 'event tags:', eventTags);
 
-      if (!hasAll) {
-        return false;
-      }
+    const hasAll = eventTags.includes(searchTag);
+
+    if (!hasAll) {
+      return false;
     }
 
     return true;
