@@ -17,7 +17,7 @@ export class NostrPool extends NPool<NRelay1> {
     super(poolOptions);
   }
 
-  observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal }): Observable<NostrEvent> {
+  observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal, launchErrorOnClosed?: boolean }): Observable<NostrEvent> {
     debuglog('[[subscribe filter]]', filters);
     const controller = new AbortController();
     const signal = opts?.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal;
@@ -27,7 +27,9 @@ export class NostrPool extends NPool<NRelay1> {
     (async () => {
       for await (const msg of this.req(filters, { signal })) {
         if (msg[0] === 'CLOSED') {
-          subject.error(msg);
+          if (opts && opts.launchErrorOnClosed) {
+            subject.error(msg)
+          }
           break;
         } else if (msg[0] === 'EVENT') {
           const nsetSize = nset.size;
@@ -48,7 +50,7 @@ export class NostrPool extends NPool<NRelay1> {
       .pipe(
         finalize(() => {
           debuglog( '[[unsubscribe filter]]', filters);
-          controller.abort();
+          setTimeout(() => controller.abort());
         })
       );
   }

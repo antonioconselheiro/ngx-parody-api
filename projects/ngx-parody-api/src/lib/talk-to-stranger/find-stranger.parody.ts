@@ -21,11 +21,11 @@ import { TalkToStrangerSigner } from "./talk-to-stranger.signer";
 export class FindStrangerParody {
 
   constructor(
-    private nostrEventFactory: NostrEventFactory,
-    private findStrangerNostr: FindStrangerNostr,
-    private talkToStrangerSession: IgnoreListService,
-    private talkToStrangerSigner: TalkToStrangerSigner,
-    private nostrConverter: NostrConverter,
+    private factory: NostrEventFactory,
+    private findStranger: FindStrangerNostr,
+    private ignoreList: IgnoreListService,
+    private signer: TalkToStrangerSigner,
+    private converter: NostrConverter,
     private config: TalkToStrangerConfig,
     private npool: NostrPool
   ) { }
@@ -40,35 +40,36 @@ export class FindStrangerParody {
   /**
    * Search for stranger
    */
-  async searchStranger(opts: SearchStrangerOptions): Promise<NostrPublicUser> {
+  async searchStranger(opts: SearchStrangerOptions, session?: NostrPublicUser): Promise<NostrPublicUser> {
     if (opts.signal && opts.signal.aborted) {
       await this.endSession();
       return Promise.reject(opts.signal);
     }
 
-    this.createSession();
-    const wannaChat = await this.findStrangerNostr.queryChatAvailable(opts);
+    if (!session) {
+      session = this.createSession();
+    }
+
+    const wannaChat = await this.findStranger.queryChatAvailable(opts);
 
     if (wannaChat) {
       debuglog('inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
       const listening = this.listenChatingConfirmation(wannaChat, opts);
-      await this.inviteToChating(wannaChat, opts);
+      await this.inviteToChating(wannaChat);
       const isChatingConfirmation = await listening;
-      this.talkToStrangerSession.saveInIgnoreList(wannaChat.pubkey);
+      this.ignoreList.saveInIgnoreList(wannaChat.pubkey);
 
       if (isChatingConfirmation) {
-        return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(wannaChat.pubkey));
+        return Promise.resolve(this.converter.convertPubkeyToPublicKeys(wannaChat.pubkey));
       } else {
-        await this.endSession();
-
-        return this.searchStranger(opts);
+        return this.searchStranger(opts, session);
       }
     }
 
-    const currentUser = await this.talkToStrangerSigner.getPublicUser();
+    const currentUser = await this.signer.getPublicUser();
     await this.publishWannaChatStatus(opts);
     return new Promise(resolve => {
-      const sub = this.findStrangerNostr
+      const sub = this.findStranger
         .listenChatConfirmation(currentUser, opts)
         .pipe(
           timeout(this.config.wannachatStatusDefaultTimeoutInSeconds * 1000),
@@ -83,24 +84,21 @@ export class FindStrangerParody {
         )
         .subscribe({
           next: event => {
-            const isValid = this.findStrangerNostr.validateEvent(event, opts);
-            if (isValid) {
-              this.talkToStrangerSession.saveInIgnoreList(event.pubkey);
-              this.replyChatInvitation(event, opts)
-                .then(user => {
-                  if (!user) {
-                    throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
-                  }
-  
-                  resolve(user)
-                })
-                .catch(e => {
-                  console.error(e);
-                  throw e;
-                });
-  
-              sub.unsubscribe();
-            }
+            this.ignoreList.saveInIgnoreList(event.pubkey);
+            this.replyChatInvitation(event, opts)
+              .then(user => {
+                if (!user) {
+                  throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
+                }
+
+                resolve(user)
+              })
+              .catch(e => {
+                console.error(e);
+                throw e;
+              });
+
+            sub.unsubscribe();
           },
           error: err => console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']',err)
         });
@@ -111,38 +109,33 @@ export class FindStrangerParody {
     debuglog('event was listen: ', event);
     debuglog('it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
-    await this.inviteToChating(event, opts);
+    await this.inviteToChating(event);
     debuglog('replied... resolving... ');
     debuglog('[searchStranger] unsubscribe');
-    return Promise.resolve(this.nostrConverter.convertPubkeyToPublicKeys(event.pubkey));
+    return Promise.resolve(this.converter.convertPubkeyToPublicKeys(event.pubkey));
   }
 
   private isChatingToPubKey(event: NostrEvent, me: NostrPublicUser): boolean {
-    debuglog('is wannachat reply with chating? event: ', event);
-
-    const result = event.tags
+    debuglog('is wannachat reply with confirm? event: ', event);
+    const result = event.content === 'confirm' && event.tags
       .filter(([type]) => type === 'p')
       .find(([, pubkey]) => pubkey === me.pubkey) || [];
 
-    debuglog('is wannachat reply with chating?', !!result.length ? 'yes' : 'no');
+    debuglog('is wannachat reply with confirm?', !!result.length ? 'yes' : 'no');
     return !!result.length;
   }
 
-  private inviteToChating(strangerStatus: NostrEvent, opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const stranger = this.nostrConverter.convertPubkeyToPublicKeys(strangerStatus.pubkey);
-    return this.publishChatInviteStatus(stranger, opts);
+  private inviteToChating(strangerStatus: NostrEvent): Promise<NostrEvent> {
+    const stranger = this.converter.convertPubkeyToPublicKeys(strangerStatus.pubkey);
+    return this.publishChatInviteStatus(stranger);
   }
 
   private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: SearchStrangerOptions): Promise<boolean> {
     return new Promise<boolean>(resolve => {
       debuglog('listening status update from: ', strangerWannachatEvent.pubkey);
       // FIXME: ensure that the error will make the unsubscription trigger the abort signal sending, to clean filters in relay
-      const subscription: Subscription = this.findStrangerNostr
+      const subscription: Subscription = this.findStranger
         .listenUserStatusUpdate(strangerWannachatEvent.pubkey, opts)
-        .pipe(
-          timeout(5000),
-          catchError(err => throwError(() => err))
-        )
         .subscribe({
           next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent).then(is => {
             if (typeof is === 'boolean') {
@@ -165,38 +158,33 @@ export class FindStrangerParody {
     if (sub.closed) {
       return Promise.resolve(void(0));
     }
-
-    //  FIXME: revisar estas validações
-    if (status.id === strangerWannachatEvent.id && /wannachat/.test(status.content)) {
-      debuglog('stranger #wannachat status was listen, ignoring and waiting new status...');
-      return Promise.resolve(undefined);
-    }
-
-    debuglog(`stranger #${status.content} status was listen.`);
-    sub.unsubscribe();
-    debuglog('[listenUserStatusUpdate] unsubscribe');
+    
+    debuglog(`stranger status "${status.content}" was listen.`);
     debuglog('stranger ', strangerWannachatEvent.pubkey, ' update status: ', status);
 
-    const me = await this.talkToStrangerSigner.getPublicUser();
+    const me = await this.signer.getPublicUser();
     if (this.isChatingToPubKey(status, me)) {
       debuglog('is "confirm" status confirming chating, resolved with true');
+      sub.unsubscribe();
+      debuglog('[listenUserStatusUpdate] unsubscribe');
+
       return Promise.resolve(true);
     } else {
-      debuglog('unexpected status was given, resolved with false, event: ', status);
+      debuglog('stranger is talking to another, resolved with false, event: ', status);
       return Promise.resolve(false);
     }
   }
 
   private async publishWannaChatStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const wannaChatStatus = await this.nostrEventFactory.createWannaChatUserStatus(opts);
+    const wannaChatStatus = await this.factory.createWannaChatUserStatus(opts);
     debuglog('updating my status to: ', wannaChatStatus);
     await this.npool.event(wannaChatStatus);
 
     return Promise.resolve(wannaChatStatus);
   }
 
-  private async publishChatInviteStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const chatingStatus = await this.nostrEventFactory.createChatingUserStatus(stranger, opts);
+  private async publishChatInviteStatus(stranger: NostrPublicUser): Promise<NostrEvent> {
+    const chatingStatus = await this.factory.createChatingUserStatus(stranger);
     debuglog('updating my status to: ', chatingStatus);
     await this.npool.event(chatingStatus);
 
@@ -204,20 +192,20 @@ export class FindStrangerParody {
   }
 
   private async deleteUserHistory(): Promise<void> {
-    const deleteStatus = await this.nostrEventFactory.deleteUserHistory();
+    const deleteStatus = await this.factory.deleteUserHistory();
     debuglog('deleting user history');
     await this.npool.event(deleteStatus);
   }
 
   createSession(): NostrPublicUser {
-    const session = this.talkToStrangerSigner.recreateSession();
-    this.talkToStrangerSession.saveInIgnoreList(session.pubkey);
+    const session = this.signer.recreateSession();
+    this.ignoreList.saveInIgnoreList(session.pubkey);
     debuglog('me: ', session.pubkey);
     return session;
   }
 
   async endSession(): Promise<NostrEvent> {
-    const disconnectStatus = await this.nostrEventFactory.createDisconnectedUserStatus();
+    const disconnectStatus = await this.factory.createDisconnectedUserStatus();
     debuglog('updating my status to: ', disconnectStatus);
     await this.deleteUserHistory();
     await this.npool.event(disconnectStatus);

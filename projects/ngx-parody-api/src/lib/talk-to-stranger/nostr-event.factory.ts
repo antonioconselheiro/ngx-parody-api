@@ -89,13 +89,11 @@ export class NostrEventFactory {
     ];
   }
 
-  createChatingUserStatus(stranger: NostrPublicUser, opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const myTag = this.generateRegisterUserTags(opts);
+  createChatingUserStatus(stranger: NostrPublicUser): Promise<NostrEvent> {
     return this.createUserStatus('confirm', [
       ['expiration', this.getExpirationTimestamp(this.largeExpirationTime)],
       ['p', stranger.pubkey],
-      ['t', 'confirm'],
-      ...myTag
+      ['t', 'confirm']
     ]);
   }
 
