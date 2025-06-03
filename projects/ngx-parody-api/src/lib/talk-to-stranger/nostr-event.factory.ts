@@ -105,7 +105,7 @@ export class NostrEventFactory {
         ['k', String(kinds.UserStatuses)],
         ['expiration', this.getExpirationTimestamp()]
       ],
-      created_at: Math.floor(new Date().getTime() / 1000),
+      created_at: this.unixTimeNow(),
       content: ''
     }
 

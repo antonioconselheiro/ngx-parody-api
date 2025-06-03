@@ -33,8 +33,8 @@ export class FindStrangerParody {
   /**
    * Publish event using nostr pool
    */
-  publish(event: NostrEvent): Promise<void> {
-    return this.npool.event(event);
+  publish(event: NostrEvent): Promise<NostrEvent> {
+    return this.npool.publish(event);
   }
 
   /**
@@ -85,7 +85,7 @@ export class FindStrangerParody {
         .subscribe({
           next: event => {
             this.ignoreList.saveInIgnoreList(event.pubkey);
-            this.replyChatInvitation(event, opts)
+            this.replyChatInvitation(event)
               .then(user => {
                 if (!user) {
                   throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
@@ -105,7 +105,7 @@ export class FindStrangerParody {
     });
   }
 
-  private async replyChatInvitation(event: NostrEvent, opts: SearchStrangerOptions): Promise<NostrPublicUser | void> {
+  private async replyChatInvitation(event: NostrEvent): Promise<NostrPublicUser | void> {
     debuglog('event was listen: ', event);
     debuglog('it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
@@ -175,26 +175,17 @@ export class FindStrangerParody {
     }
   }
 
-  private async publishWannaChatStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const wannaChatStatus = await this.factory.createWannaChatUserStatus(opts);
-    debuglog('updating my status to: ', wannaChatStatus);
-    await this.npool.event(wannaChatStatus);
-
-    return Promise.resolve(wannaChatStatus);
+  private publishWannaChatStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
+    return this.npool.publishEfemeral(() => this.factory.createWannaChatUserStatus(opts));
   }
 
   private async publishChatInviteStatus(stranger: NostrPublicUser): Promise<NostrEvent> {
-    const chatingStatus = await this.factory.createChatingUserStatus(stranger);
-    debuglog('updating my status to: ', chatingStatus);
-    await this.npool.event(chatingStatus);
-
-    return Promise.resolve(chatingStatus);
+    return this.npool.publishEfemeral(() => this.factory.createChatingUserStatus(stranger));
   }
 
   private async deleteUserHistory(): Promise<void> {
-    const deleteStatus = await this.factory.deleteUserHistory();
     debuglog('deleting user history');
-    await this.npool.event(deleteStatus);
+    await this.npool.publishEfemeral(() => this.factory.deleteUserHistory());
   }
 
   createSession(): NostrPublicUser {
@@ -205,11 +196,7 @@ export class FindStrangerParody {
   }
 
   async endSession(): Promise<NostrEvent> {
-    const disconnectStatus = await this.factory.createDisconnectedUserStatus();
-    debuglog('updating my status to: ', disconnectStatus);
     await this.deleteUserHistory();
-    await this.npool.event(disconnectStatus);
-
-    return Promise.resolve(disconnectStatus);
+    return this.npool.publishEfemeral(() => this.factory.createDisconnectedUserStatus());
   }
 }

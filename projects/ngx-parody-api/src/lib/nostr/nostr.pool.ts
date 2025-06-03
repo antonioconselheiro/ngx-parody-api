@@ -17,7 +17,42 @@ export class NostrPool extends NPool<NRelay1> {
     super(poolOptions);
   }
 
-  observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal, launchErrorOnClosed?: boolean }): Observable<NostrEvent> {
+  async publish(event: NostrEvent, opts?: {
+    signal?: AbortSignal;
+  }): Promise<NostrEvent> {
+    await this.event(event, opts);
+    return Promise.resolve(event);
+  }
+
+  /**
+   * create new status event and republish if relay
+   * strfry replies with "replaced: have newer event"
+   */
+  async publishEfemeral(factory: () => Promise<NostrEvent>, opts?: {
+    signal?: AbortSignal;
+  }): Promise<NostrEvent> {
+    let event: NostrEvent;
+    try {
+      event = await factory();
+      debuglog('updating status to: ', event);
+      await this.event(event, opts);
+    } catch (e) {
+      if (e instanceof Error && /^replaced\:/.test(e.message)) {
+        console.warn('replaced error happen on trying to publish status... trying again...');
+        //  replaced means that the last event was too new to override an existing status
+        //  to create the event again will make it older
+        event = await factory();
+        debuglog('updating status to: ', event);
+        await this.event(event, opts);
+      } else {
+        return Promise.reject(e);
+      }
+    }
+    
+    return Promise.resolve(event);
+  }
+
+  observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal }): Observable<NostrEvent> {
     debuglog('[[subscribe filter]]', filters);
     const controller = new AbortController();
     const signal = opts?.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal;
@@ -27,9 +62,7 @@ export class NostrPool extends NPool<NRelay1> {
     (async () => {
       for await (const msg of this.req(filters, { signal })) {
         if (msg[0] === 'CLOSED') {
-          if (opts && opts.launchErrorOnClosed) {
-            subject.error(msg)
-          }
+          subject.error(msg);
           break;
         } else if (msg[0] === 'EVENT') {
           const nsetSize = nset.size;
@@ -38,18 +71,18 @@ export class NostrPool extends NPool<NRelay1> {
           if (nsetSize !== nset.size) {
             subject.next(msg[2]);
           } else {
-            debuglog( 'event deduplicated, not emiting again: ', msg[2]);
-            debuglog( 'current nset from request: ', nset);
+            debuglog('event deduplicated, not emiting again: ', msg[2]);
+            debuglog('current nset from request: ', nset);
           }
         }
       }
     })();
-  
+
     return subject
       .asObservable()
       .pipe(
         finalize(() => {
-          debuglog( '[[unsubscribe filter]]', filters);
+          debuglog('[[unsubscribe filter]]', filters);
           setTimeout(() => controller.abort());
         })
       );

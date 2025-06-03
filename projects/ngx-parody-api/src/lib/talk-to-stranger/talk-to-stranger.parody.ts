@@ -128,19 +128,17 @@ export class TalkToStrangerParody {
       .pipe(finalize(() => clearInterval(id)));
   }
 
-  async sendMessage(stranger: NostrPublicUser, message: string): Promise<void> {
+  async sendMessage(stranger: NostrPublicUser, message: string): Promise<NostrEvent> {
     await this.stopTyping();
     const event = await this.nostrEventFactory.createEncryptedDirectMessage(stranger, message);
-    return this.npool.event(event);
+    return this.npool.publish(event);
   }
 
-  async isTyping(): Promise<void> {
-    const wannaChatStatus = await this.nostrEventFactory.createTypingUserStatus();
-    return this.npool.event(wannaChatStatus);
+  isTyping(): Promise<NostrEvent> {
+    return this.npool.publishEfemeral(() => this.nostrEventFactory.createTypingUserStatus());
   }
 
-  async stopTyping(): Promise<void> {
-    const wannaChatStatus = await this.nostrEventFactory.cleanUserStatus();
-    return this.npool.event(wannaChatStatus);
+  stopTyping(): Promise<NostrEvent> {
+    return this.npool.publishEfemeral(() => this.nostrEventFactory.cleanUserStatus());
   }
 }
