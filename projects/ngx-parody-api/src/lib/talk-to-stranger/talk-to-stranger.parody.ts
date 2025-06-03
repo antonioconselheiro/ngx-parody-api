@@ -1,12 +1,11 @@
 import { Injectable } from '@angular/core';
 import { kinds, NostrEvent } from 'nostr-tools';
-import { finalize, Observable, Subject } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
+import { FindStrangerParody } from './find-stranger.parody';
 import { NostrEventFactory } from './nostr-event.factory';
 import { TalkToStrangerSigner } from './talk-to-stranger.signer';
-import { FindStrangerParody } from './find-stranger.parody';
-import { debuglog } from '../log/debuglog.fn';
 
 /**
  * Talk to stranger service omegle feature for nostr
@@ -84,48 +83,6 @@ export class TalkToStrangerParody {
     });
 
     return observable;
-  }
-
-  listenCurrenOnlineUsers(filterTags: string[] = ['omegle']): Observable<number> {
-    const subject = new Subject<number>();
-    let requestPending = false;
-    const closure = () => {
-      if (requestPending) {
-        return;
-      }
-
-      requestPending = true;
-      const filter = {
-        kinds: [kinds.UserStatuses],
-        '#t': filterTags,
-        since: Math.floor(Date.now() / 1000) - (24 * 60 * 60)
-      };
-
-      debuglog('user count requested using filter: ', filter);
-      this.npool.query([filter])
-        .then(events => {
-          const users = new Set<string>();
-          debuglog('count events', events);
-          events.forEach(event => users.add(event.pubkey));
-          const count = [...users].length;
-
-          debuglog('active users counted: ', count);
-          subject.next(count);
-          requestPending = false;
-        })
-        .catch(e => {
-          console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']', 'user count lauched error', e);
-          requestPending = false;
-          clearInterval(id);
-        });
-    };
-
-    const id = setInterval(closure, this.updateUserCountTimeout);
-    closure();
-
-    return subject
-      .asObservable()
-      .pipe(finalize(() => clearInterval(id)));
   }
 
   async sendMessage(stranger: NostrPublicUser, message: string): Promise<NostrEvent> {

@@ -37,7 +37,9 @@ export class NostrPool extends NPool<NRelay1> {
       debuglog('updating status to: ', event);
       await this.event(event, opts);
     } catch (e) {
-      if (e instanceof Error && /^replaced\:/.test(e.message)) {
+      const error = (e as any)?.errors[0] || e;  
+
+      if (error instanceof Error && /^replaced\:/.test(error.message)) {
         console.warn('replaced error happen on trying to publish status... trying again...');
         //  replaced means that the last event was too new to override an existing status
         //  to create the event again will make it older
