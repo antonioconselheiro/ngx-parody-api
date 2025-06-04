@@ -84,8 +84,9 @@ export class NostrEventFactory {
   }
 
   private generateRegisterUserTags(opts: SearchStrangerOptions): Array<string[]> {
+    const status = opts.statusName || 'wannachat';
     return [
-      ['t', `${opts.userIs}_wannachat_${opts.searchFor}`]
+      ['t', `${opts.userIs}_${status}_${opts.searchFor}`]
     ];
   }
 

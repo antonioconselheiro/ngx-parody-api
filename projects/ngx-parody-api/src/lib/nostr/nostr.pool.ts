@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@angular/core';
 import { NostrEvent, NostrFilter, NPool, NPoolOpts, NRelay1 } from '@nostrify/nostrify';
 import { finalize, Observable, Subject } from 'rxjs';
 import { POOL_OPTIONS_TOKEN } from '../injection-token/npool-options.token';
-import { debuglog } from '../log/debuglog.fn';
+import { log } from '../log/log';
 
 /**
  * when nostr-ngx get launched this class will be deprecated and
@@ -34,7 +34,7 @@ export class NostrPool extends NPool<NRelay1> {
     let event: NostrEvent;
     try {
       event = await factory();
-      debuglog('updating status to: ', event);
+      log.debug('updating status to: ', event);
       await this.event(event, opts);
     } catch (e) {
       const error = (e as any)?.errors[0] || e;  
@@ -44,7 +44,7 @@ export class NostrPool extends NPool<NRelay1> {
         //  replaced means that the last event was too new to override an existing status
         //  to create the event again will make it older
         event = await factory();
-        debuglog('updating status to: ', event);
+        log.debug('updating status to: ', event);
         await this.event(event, opts);
       } else {
         return Promise.reject(e);
@@ -55,7 +55,7 @@ export class NostrPool extends NPool<NRelay1> {
   }
 
   observe(filters: Array<NostrFilter>, opts?: { signal?: AbortSignal }): Observable<NostrEvent> {
-    debuglog('[[subscribe filter]]', filters);
+    log.debug('[[subscribe filter]]', filters);
     const controller = new AbortController();
     const signal = opts?.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal;
     const subject = new Subject<NostrEvent>();
@@ -73,8 +73,8 @@ export class NostrPool extends NPool<NRelay1> {
           if (nsetSize !== nset.size) {
             subject.next(msg[2]);
           } else {
-            debuglog('event deduplicated, not emiting again: ', msg[2]);
-            debuglog('current nset from request: ', nset);
+            log.debug('event deduplicated, not emiting again: ', msg[2]);
+            log.debug('current nset from request: ', nset);
           }
         }
       }
@@ -84,7 +84,7 @@ export class NostrPool extends NPool<NRelay1> {
       .asObservable()
       .pipe(
         finalize(() => {
-          debuglog('[[unsubscribe filter]]', filters);
+          log.debug('[[unsubscribe filter]]', filters);
           setTimeout(() => controller.abort());
         })
       );

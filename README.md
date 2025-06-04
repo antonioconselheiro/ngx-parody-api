@@ -6,7 +6,7 @@
 If you code using this lib you [automatically become a cypherpunk](https://cdn.nakamotoinstitute.org/docs/cypherpunk-manifesto.txt).
 
 ## Features of each parody project
-![Parody family](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/assets/parody-api.png)
+![Parody family](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/docs/imgs/parody-api.png)
 
 ## Parody Projects
 Parody projects are jokes in the form of fully functional clients nostr.
@@ -46,7 +46,9 @@ The packages `@belomonte/nostr-ngx`, `@belomonte/nostr-gui-ngx` and `@belomonte/
 ### Configure
 The only available social network feature in this `@belomonte/ngx-parody-api` version is the `Talk to Stranger` feature from [Omeglestr](https://github.com/antonioconselheiro/omeglestr).
 
-You must import TalkToStrangerModule and provide NPool configs, in the example below is created a single module just to provide these module and it's configs:
+<!-- basic example -->
+
+Import TalkToStrangerModule and provide NPool configs, in the example below is created a single module just to provide these module and it's configs:
 
 ```typescript
 import { CommonModule } from '@angular/common';
@@ -122,10 +124,10 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 }
 ```
 
-`RelayConfigService` is a custom service from `omeglestr` that read user choosen relay, you can copy this approuch from `omeglestr`, can set the relays hardcoded or can create a custom service.
+`RelayConfigService` is a custom service from `omeglestr` that read user choosen relay, you can copy this approuch from `omeglestr`, can set the relays hardcoded or can create a custom angular service.
 
 ### Find Stranger
-After you configure your app relays, to find a stranger you must inject the service FindStrangerService as the example below:
+To find a stranger you must inject the service FindStrangerService as the example below:
 
 ```typescript
 import { FindStrangerParody } from '@belomonte/ngx-parody-api';

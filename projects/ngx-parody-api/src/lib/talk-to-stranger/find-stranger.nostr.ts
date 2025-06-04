@@ -6,7 +6,7 @@ import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { SearchStrangerOptions } from './search-stranger-options.interface';
 import { IgnoreListService } from './ignore-list.service';
-import { debuglog } from '../log/debuglog.fn';
+import { log } from '../log/log';
 
 @Injectable()
 export class FindStrangerNostr {
@@ -24,7 +24,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    debuglog('observing filter:', filters);
+    log.debug('observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
@@ -38,7 +38,7 @@ export class FindStrangerNostr {
       }
     ];
 
-    debuglog('quering filter:', filters);
+    log.debug('quering filter:', filters);
     return this.npool.query(filters, opts);
   }
 
@@ -52,12 +52,13 @@ export class FindStrangerNostr {
       }
     ];
 
-    debuglog('observing filter:', filters);
+    log.debug('observing filter:', filters);
     return this.npool.observe(filters, opts);
   }
 
   private generateSearchUserTags(opts: SearchStrangerOptions): string {
-    return `${opts.searchFor}_wannachat_${opts.userIs}`;
+    const status = opts.statusName || 'wannachat';
+    return `${opts.searchFor}_${status}_${opts.userIs}`;
   }
 
   async queryChatAvailable(opts: SearchStrangerOptions): Promise<NostrEvent | null> {
@@ -73,17 +74,17 @@ export class FindStrangerNostr {
       }
     ];
 
-    debuglog('quering filter: ', filters);
+    log.debug('quering filter: ', filters);
     let wannachats = await this.npool.query(filters, opts);
 
     wannachats = wannachats.filter(wannachat => this.validateWannachatEvent(wannachat, opts));
-    debuglog('list of wannachat event loaded:', wannachats);
+    log.debug('list of wannachat event loaded:', wannachats);
     const wannachat = wannachats[Math.floor(Math.random() * wannachats.length)];
 
     if (wannachat) {
-      debuglog('wannachat found:', wannachat);
+      log.debug('wannachat found:', wannachat);
     } else {
-      debuglog('wannachat NOT found...');
+      log.debug('wannachat NOT found...');
     }
 
     return Promise.resolve(wannachat || null);

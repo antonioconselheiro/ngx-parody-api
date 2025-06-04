@@ -6,14 +6,18 @@ export interface SearchStrangerOptions {
   signal?: AbortSignal;
 
   /**
-   * The algorithm will require the event status have these configured tags.
-   * Omeglestr uses "omegle" to find omegle users.
+   * Alphanumeric string that user is searching for. Omeglestr uses "omegle" to find omegle users.
    */
   searchFor: string;
 
   /**
-   * Will publish user status with these configured tags.
-   * In omeglestr is configured as "omegle" to be available for omegle strangers.
+   * Alphanumeric string that represent the user. Omeglestr publishes this as "omegle".
    */
   userIs: string;
+
+  /**
+   * Alphanumeric string that represent the meeting purpose. Omeglestr uses "wannachat", because it users want to chat
+   * @default wannachat
+   */
+  statusName?: string;
 }

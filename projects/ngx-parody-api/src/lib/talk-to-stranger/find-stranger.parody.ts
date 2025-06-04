@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { NostrEvent } from "@nostrify/nostrify";
 import { catchError, Subscription, throwError, timeout } from "rxjs";
 import { NostrPublicUser } from "../domain/nostr-public-user.interface";
-import { debuglog } from "../log/debuglog.fn";
+import { log } from "../log/log";
 import { NostrConverter } from "../nostr/nostr.converter";
 import { NostrPool } from "../nostr/nostr.pool";
 import { FindStrangerNostr } from "./find-stranger.nostr";
@@ -53,7 +53,7 @@ export class FindStrangerParody {
     const wannaChat = await this.findStranger.queryChatAvailable(opts);
 
     if (wannaChat) {
-      debuglog('inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
+      log.debug('inviting ', wannaChat.pubkey, ' to chat and listening confirmation');
       const listening = this.listenChatingConfirmation(wannaChat, opts);
       await this.inviteToChating(wannaChat);
       const isChatingConfirmation = await listening;
@@ -84,44 +84,46 @@ export class FindStrangerParody {
         )
         .subscribe({
           next: event => {
-            this.ignoreList.saveInIgnoreList(event.pubkey);
-            this.replyChatInvitation(event)
-              .then(user => {
-                if (!user) {
-                  throw new Error('internal error: user not found, please report this with the logs from developer tools (F12)');
-                }
-
-                resolve(user)
-              })
-              .catch(e => {
-                console.error(e);
-                throw e;
-              });
-
-            sub.unsubscribe();
+            if (event.content === 'confirm') {
+              this.ignoreList.saveInIgnoreList(event.pubkey);
+              this.replyChatInvitation(event)
+                .then(user => {
+                  if (!user) {
+                    throw new Error('app error: user not found');
+                  }
+  
+                  resolve(user)
+                })
+                .catch(e => {
+                  log.error(e);
+                  throw e;
+                });
+  
+              sub.unsubscribe();
+            }
           },
-          error: err => console.error(new Date().toLocaleString(), '[' + Math.floor(new Date().getTime() / 1000) + ']',err)
+          error: err => log.error(err)
         });
     });
   }
 
   private async replyChatInvitation(event: NostrEvent): Promise<NostrPublicUser | void> {
-    debuglog('event was listen: ', event);
-    debuglog('it must be a chating invitation from ', event.pubkey, ', repling invitation...');
+    log.debug('event was listen: ', event);
+    log.debug('it must be a chating invitation from ', event.pubkey, ', repling invitation...');
 
     await this.inviteToChating(event);
-    debuglog('replied... resolving... ');
-    debuglog('[searchStranger] unsubscribe');
+    log.debug('replied... resolving... ');
+    log.debug('[searchStranger] unsubscribe');
     return Promise.resolve(this.converter.convertPubkeyToPublicKeys(event.pubkey));
   }
 
   private isChatingToPubKey(event: NostrEvent, me: NostrPublicUser): boolean {
-    debuglog('is wannachat reply with confirm? event: ', event);
+    log.debug('is wannachat reply with confirm? event: ', event);
     const result = event.content === 'confirm' && event.tags
       .filter(([type]) => type === 'p')
       .find(([, pubkey]) => pubkey === me.pubkey) || [];
 
-    debuglog('is wannachat reply with confirm?', !!result.length ? 'yes' : 'no');
+    log.debug('is wannachat reply with confirm?', !!result.length ? 'yes' : 'no');
     return !!result.length;
   }
 
@@ -132,7 +134,7 @@ export class FindStrangerParody {
 
   private async listenChatingConfirmation(strangerWannachatEvent: NostrEvent, opts: SearchStrangerOptions): Promise<boolean> {
     return new Promise<boolean>(resolve => {
-      debuglog('listening status update from: ', strangerWannachatEvent.pubkey);
+      log.debug('listening status update from: ', strangerWannachatEvent.pubkey);
       // FIXME: ensure that the error will make the unsubscription trigger the abort signal sending, to clean filters in relay
       const subscription: Subscription = this.findStranger
         .listenUserStatusUpdate(strangerWannachatEvent.pubkey, opts)
@@ -143,7 +145,7 @@ export class FindStrangerParody {
             }
           }),
           error: (e) => {
-            console.error(e);
+            log.error(e);
             resolve(false);
           }
         });
@@ -159,18 +161,18 @@ export class FindStrangerParody {
       return Promise.resolve(void(0));
     }
     
-    debuglog(`stranger status "${status.content}" was listen.`);
-    debuglog('stranger ', strangerWannachatEvent.pubkey, ' update status: ', status);
+    log.debug(`stranger status "${status.content}" was listen.`);
+    log.debug('stranger ', strangerWannachatEvent.pubkey, ' update status: ', status);
 
     const me = await this.signer.getPublicUser();
     if (this.isChatingToPubKey(status, me)) {
-      debuglog('is "confirm" status confirming chating, resolved with true');
+      log.debug('is "confirm" status confirming chating, resolved with true');
       sub.unsubscribe();
-      debuglog('[listenUserStatusUpdate] unsubscribe');
+      log.debug('[listenUserStatusUpdate] unsubscribe');
 
       return Promise.resolve(true);
     } else {
-      debuglog('stranger is talking to another, resolved with false, event: ', status);
+      log.debug('stranger is talking to another, resolved with false, event: ', status);
       return Promise.resolve(false);
     }
   }
@@ -184,14 +186,14 @@ export class FindStrangerParody {
   }
 
   private async deleteUserHistory(): Promise<void> {
-    debuglog('deleting user history');
+    log.debug('deleting user history');
     await this.npool.publishEfemeral(() => this.factory.deleteUserHistory());
   }
 
   createSession(): NostrPublicUser {
     const session = this.signer.recreateSession();
     this.ignoreList.saveInIgnoreList(session.pubkey);
-    debuglog('me: ', session.pubkey);
+    log.debug('me: ', session.pubkey);
     return session;
   }
 
