@@ -2,7 +2,8 @@ import { Inject, Injectable } from '@angular/core';
 import { NostrEvent, NostrFilter, NPool, NPoolOpts, NRelay1 } from '@nostrify/nostrify';
 import { finalize, Observable, Subject } from 'rxjs';
 import { POOL_OPTIONS_TOKEN } from '../injection-token/npool-options.token';
-import { log } from '../log/log';
+import { log } from '../util/log';
+import { sleep } from '../util/sleep';
 
 /**
  * when nostr-ngx get launched this class will be deprecated and
@@ -43,6 +44,7 @@ export class NostrPool extends NPool<NRelay1> {
         console.warn('replaced error happen on trying to publish status... trying again...');
         //  replaced means that the last event was too new to override an existing status
         //  to create the event again will make it older
+        await sleep(1000);
         event = await factory();
         log.debug('updating status to: ', event);
         await this.event(event, opts);

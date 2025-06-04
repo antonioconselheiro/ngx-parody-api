@@ -6,7 +6,7 @@ import { NostrPublicUser } from '../domain/nostr-public-user.interface';
 import { NostrPool } from '../nostr/nostr.pool';
 import { SearchStrangerOptions } from './search-stranger-options.interface';
 import { IgnoreListService } from './ignore-list.service';
-import { log } from '../log/log';
+import { log } from '../util/log';
 
 @Injectable()
 export class FindStrangerNostr {

@@ -2,7 +2,7 @@ import { Injectable } from "@angular/core";
 import { NostrEvent } from "@nostrify/nostrify";
 import { catchError, Subscription, throwError, timeout } from "rxjs";
 import { NostrPublicUser } from "../domain/nostr-public-user.interface";
-import { log } from "../log/log";
+import { log } from "../util/log";
 import { NostrConverter } from "../nostr/nostr.converter";
 import { NostrPool } from "../nostr/nostr.pool";
 import { FindStrangerNostr } from "./find-stranger.nostr";

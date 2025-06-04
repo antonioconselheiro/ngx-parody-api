@@ -20,7 +20,7 @@ export class NostrEventFactory {
 
   private unixTimeNow(): number {
     const oneMillisecond = 1000;
-    return Math.floor(Date.now() / oneMillisecond);
+    return Math.floor(new Date().getTime() / oneMillisecond);
   }
 
   /**
@@ -31,7 +31,7 @@ export class NostrEventFactory {
     expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds
   ): string {
     const oneMillisecond = 1000;
-    const expirationTimestamp = Math.floor(Date.now() / oneMillisecond) + expireIn;
+    const expirationTimestamp = Math.floor(new Date().getTime() / oneMillisecond) + expireIn;
     return String(expirationTimestamp);
   }
 
