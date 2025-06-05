@@ -72,7 +72,7 @@ export class FindStrangerParody {
       const sub = this.findStranger
         .listenChatConfirmation(currentUser, opts)
         .pipe(
-          timeout(this.config.wannachatStatusDefaultTimeoutInSeconds * 1000),
+          timeout(this.config.getTimeoutInMilliseconds()),
           catchError(err => {
             sub.unsubscribe();
             this.deleteUserHistory().then(

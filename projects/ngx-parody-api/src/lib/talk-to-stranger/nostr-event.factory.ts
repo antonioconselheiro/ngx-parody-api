@@ -28,8 +28,12 @@ export class NostrEventFactory {
    * @returns expiration timestamp
    */
   private getExpirationTimestamp(
-    expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds
+    expireIn?: number
   ): string {
+    if (!expireIn) {
+      expireIn = this.talkToStrangerConfig.getTimeoutInSeconds();
+    }
+
     const oneMillisecond = 1000;
     const expirationTimestamp = Math.floor(new Date().getTime() / oneMillisecond) + expireIn;
     return String(expirationTimestamp);
@@ -62,7 +66,7 @@ export class NostrEventFactory {
    * https://github.com/nostr-protocol/nips/blob/master/38.md
    */
   createWannaChatUserStatus(opts: SearchStrangerOptions): Promise<NostrEvent> {
-    const expireIn = this.talkToStrangerConfig.wannachatStatusDefaultTimeoutInSeconds + 5;
+    const expireIn = this.talkToStrangerConfig.getTimeoutInSeconds() + 5;
     const tags = this.generateRegisterUserTags(opts);
 
     return this.createUserStatus('wannachat', [
