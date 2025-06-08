@@ -2,7 +2,7 @@ import { Directive, HostListener } from '@angular/core';
 import { TalkToStrangerParody } from '../public-api';
 
 @Directive({
-  selector: '[omgTypingStatusController]',
+  selector: '[parodyTypingStatusController]',
   standalone: true
 })
 export class TypingStatusControllerDirective {
