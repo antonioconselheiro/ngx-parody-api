@@ -75,6 +75,8 @@ export class OmegleModule { }
 ```
 
 ```typescript
+import { TypingStatusDirective } from '@belomonte/ngx-parody-api';
+
 @NgModule({
   declarations: [
     AppComponent
@@ -84,7 +86,8 @@ export class OmegleModule { }
     AppRoutingModule,
 
     // [...]
-    OmegleModule
+    OmegleModule,
+    TypingStatusDirective
     // [...]
   ],
   bootstrap: [
@@ -260,6 +263,16 @@ export class ChatingComponent implements OnDestroy, OnInit {
 }
 ```
 
+```typescript
+  <textarea
+    name="text"
+    #messageField
+    (keydown.enter)="sendMessage(messageField.value); messageField.value = '';"
+    parodyTypingStatus
+  ></textarea>
+```
+
+### Disconnect
 ![Omeglestr disconnect](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/docs/imgs/omeglestr/3-omeglestr-disconnect.png)
 
 ```typescript
