@@ -2,10 +2,10 @@ import { Directive, HostListener } from '@angular/core';
 import { TalkToStrangerParody } from '../public-api';
 
 @Directive({
-  selector: '[parodyTypingStatusController]',
+  selector: '[parodyTypingStatus]',
   standalone: true
 })
-export class TypingStatusControllerDirective {
+export class TypingStatusDirective {
 
   readonly typingTimeoutAmount = 2_000;
 

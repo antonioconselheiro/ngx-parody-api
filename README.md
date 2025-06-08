@@ -48,7 +48,7 @@ The only available social network feature in this `@belomonte/ngx-parody-api` ve
 
 <!-- basic example -->
 
-Import TalkToStrangerModule and provide NPool configs, in the example below is created a single module just to provide these module and it's configs:
+Import TalkToStrangerModule and provide NPool configs:
 
 ```typescript
 import { CommonModule } from '@angular/common';
@@ -127,6 +127,9 @@ export class OmegleNPoolOpts implements NPoolOpts<NRelay1> {
 `RelayConfigService` is a custom service from `omeglestr` that read user choosen relay, you can copy this approuch from `omeglestr`, can set the relays hardcoded or can create a custom angular service.
 
 ### Find Stranger
+![Omeglestr search stranger](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/docs/imgs/omeglestr/1-omeglestr-search.png)
+
+
 To find a stranger you must inject the service FindStrangerService as the example below:
 
 ```typescript
@@ -167,6 +170,8 @@ export class SearchStrangerComponent {
 ```
 
 ### Status and messages
+![Omeglestr chat and status](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/docs/imgs/omeglestr/2-omeglestr-chat-n-status.png)
+
 
 ```typescript
 import { FindStrangerParody, NostrPublicUser, TalkToStrangerParody } from '@belomonte/ngx-parody-api';
@@ -252,13 +257,16 @@ export class ChatingComponent implements OnDestroy, OnInit {
     this.strangerIsTyping = false;
     this.stranger = null;
   }
+}
+```
 
+![Omeglestr disconnect](https://raw.githubusercontent.com/antonioconselheiro/ngx-parody-api/refs/heads/main/docs/imgs/omeglestr/3-omeglestr-disconnect.png)
+
+```typescript
   //  called that when user wanna disconnect
   endSession(): Promise<void> {
     return this.findStrangerParody
       .endSession()
       .then(() => this.cleanSession());
   }
-}
-
 ```
