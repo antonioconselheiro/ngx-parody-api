@@ -13,6 +13,7 @@ export * from './lib/talk-to-stranger/ignore-list.service';
 export * from './lib/nostr/nostr.module';
 export * from './lib/nostr/nostr.converter';
 export * from './lib/nostr/nostr.pool';
+export * from './lib/typing-status-controller.directive';
 
 declare global {
   interface Window {

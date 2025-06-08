@@ -12,39 +12,10 @@ import { sleep } from '../util/sleep';
 @Injectable()
 export class NostrPool extends NPool<NRelay1> {
 
-  private static efemeralDebounce: {
-    [pubkeyAndKind: string]: NostrEvent
-  } = {};
-
   constructor(
     @Inject(POOL_OPTIONS_TOKEN) poolOptions: NPoolOpts<NRelay1>
   ) {
     super(poolOptions);
-  }
-
-  /**
-   * Debounce for efemeral events help to avoid multiple efemeral updates in
-   * the same second, coming from keyboard event, for example 
-   * 
-   * @param event 
-   */
-  private debounceEfemeralEvent(event: NostrEvent): Promise<boolean> {
-    const debounceKey = `${event.pubkey}-${event.kind}`;
-    NostrPool.efemeralDebounce[debounceKey] = event;
-
-    return new Promise(resolve => {
-      setTimeout(() => {
-        const fromDebounce = NostrPool.efemeralDebounce[debounceKey];
-        if (fromDebounce && fromDebounce.id === event.id) {
-          log.debug('event passed in debounce: ', event);
-          resolve(true);
-          delete NostrPool.efemeralDebounce[debounceKey];
-        } else {
-          log.debug('event blocked in debounce: ', event);
-          resolve(false);
-        }
-      }, 100);
-    });
   }
 
   async publish(event: NostrEvent, opts?: {
@@ -63,26 +34,23 @@ export class NostrPool extends NPool<NRelay1> {
   }): Promise<NostrEvent> {
     let event: NostrEvent;
     event = await factory();
-    const shouldPublish = await this.debounceEfemeralEvent(event);
 
-    if (shouldPublish) {
-      try {
-        log.debug('updating status to: ', event);
+    try {
+      log.debug('updating status to: ', event);
+      await this.event(event, opts);
+    } catch (e) {
+      const error = (e as any)?.errors[0] || e;
+
+      if (error instanceof Error && /^replaced\:/.test(error.message)) {
+        console.warn('replaced error happen on trying to publish status... trying again...');
+        //  replaced means that the last event was too new to override an existing status
+        //  to create the event again will make it older
+        await sleep(1000);
+        event = await factory();
+        log.debug('trying again to update status to: ', event);
         await this.event(event, opts);
-      } catch (e) {
-        const error = (e as any)?.errors[0] || e;
-
-        if (error instanceof Error && /^replaced\:/.test(error.message)) {
-          console.warn('replaced error happen on trying to publish status... trying again...');
-          //  replaced means that the last event was too new to override an existing status
-          //  to create the event again will make it older
-          await sleep(1000);
-          event = await factory();
-          log.debug('trying again to update status to: ', event);
-          await this.event(event, opts);
-        } else {
-          return Promise.reject(e);
-        }
+      } else {
+        return Promise.reject(e);
       }
     }
 

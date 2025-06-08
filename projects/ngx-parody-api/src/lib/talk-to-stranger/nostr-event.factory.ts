@@ -11,6 +11,7 @@ import { SearchStrangerOptions } from './search-stranger-options.interface';
 })
 export class NostrEventFactory {
 
+  private readonly oneMillisecond = 1000;
   readonly largeExpirationTime = 30 * 60;
 
   constructor(
@@ -19,8 +20,7 @@ export class NostrEventFactory {
   ) { }
 
   private unixTimeNow(): number {
-    const oneMillisecond = 1000;
-    return Math.floor(new Date().getTime() / oneMillisecond);
+    return Math.floor(new Date().getTime() / this.oneMillisecond);
   }
 
   /**
@@ -34,8 +34,7 @@ export class NostrEventFactory {
       expireIn = this.talkToStrangerConfig.getTimeoutInSeconds();
     }
 
-    const oneMillisecond = 1000;
-    const expirationTimestamp = Math.floor(new Date().getTime() / oneMillisecond) + expireIn;
+    const expirationTimestamp = Math.floor(new Date().getTime() / this.oneMillisecond) + expireIn;
     return String(expirationTimestamp);
   }
 
