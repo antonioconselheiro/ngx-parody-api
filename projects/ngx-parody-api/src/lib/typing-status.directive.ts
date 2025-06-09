@@ -16,7 +16,7 @@ export class TypingStatusDirective {
     private talkToStrangerParody: TalkToStrangerParody
   ) { }
 
-  @HostListener('keydown', ['$event.target'])
+  @HostListener('keydown')
   onTyping(): void {
     if (!this.typingTimeoutId) {
       this.talkToStrangerParody.isTyping();
