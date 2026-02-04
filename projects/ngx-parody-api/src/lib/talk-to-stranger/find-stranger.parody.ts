@@ -84,7 +84,8 @@ export class FindStrangerParody {
         )
         .subscribe({
           next: event => {
-            if (event.content === 'confirm') {
+            const [, confirmedTo] = event.tags.find(([type]) => type === 'p') || [];
+            if (event.content === 'confirm' && confirmedTo === currentUser.pubkey) {
               this.ignoreList.saveInIgnoreList(event.pubkey);
               this.replyChatInvitation(event)
                 .then(user => {
@@ -139,11 +140,17 @@ export class FindStrangerParody {
       const subscription: Subscription = this.findStranger
         .listenUserStatusUpdate(strangerWannachatEvent.pubkey, opts)
         .subscribe({
-          next: status => this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent).then(is => {
-            if (typeof is === 'boolean') {
-              resolve(is);
+          next: status => {
+            if (status.content === 'wannachat') {
+              return;
             }
-          }),
+
+            this.receiveChatingConfirmation(subscription, status, strangerWannachatEvent).then(is => {
+              if (typeof is === 'boolean') {
+                resolve(is);
+              }
+            });
+          },
           error: (e) => {
             log.error(e);
             resolve(false);

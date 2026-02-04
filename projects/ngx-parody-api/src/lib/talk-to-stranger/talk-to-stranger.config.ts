@@ -8,8 +8,8 @@ import { log } from '../util/log';
 export class TalkToStrangerConfig {
 
   readonly wannachatTimeoutInSeconds = {
-    min: 17,
-    max: 22
+    min: 40,
+    max: 80
   };
 
   getTimeoutInSeconds(): number {
